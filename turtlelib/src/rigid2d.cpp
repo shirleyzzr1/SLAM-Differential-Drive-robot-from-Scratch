@@ -5,6 +5,14 @@
 
 namespace turtlelib{
 
+    double normalize_angle(double rad){
+        if ((rad>-PI) & (rad<=PI)) return rad;
+        int factor = floor(rad/PI);
+        if (factor<0)factor+=1;
+        rad  = rad-factor*PI;
+        return rad;
+    }
+
     std::ostream & operator<<(std::ostream & os, const Vector2D & v){
         os << "[" << v.x << " " << v.y << "]" << std::endl;
         return os;
@@ -114,4 +122,58 @@ namespace turtlelib{
         is >> tw.thetadot >> tw.xdot >> tw.ydot;
         return is;
     }
+
+    Vector2D & Vector2D::operator+=(const Vector2D & rhs){
+        this->x+=rhs.x;
+        this->y+=rhs.y;
+        return *this;
+    }
+    Vector2D & Vector2D::operator-=(const Vector2D & rhs){
+        this->x-=rhs.x;
+        this->y-=rhs.y;
+        return *this;
+    }
+    Vector2D & Vector2D::operator*=(const double scalar){
+        this->x*=scalar;
+        this->y*=scalar;
+        return *this;
+    }
+   
+    Vector2D & operator+(Vector2D &lhs,const Vector2D & rhs){
+        return lhs+=rhs;
+    }
+
+    Vector2D & operator-(Vector2D &lhs,const Vector2D & rhs){
+        return lhs-=rhs;
+    }
+
+    Vector2D & operator*(Vector2D &lhs,const double scalar){
+        return lhs*=scalar;
+    }
+
+    Vector2D & operator*(const double scalar,Vector2D &lhs){
+        return lhs*=scalar;
+    }
+
+    double dot(const Vector2D &lhs ,const Vector2D & rhs){
+        return lhs.x*rhs.x+lhs.y*rhs.y;
+    }
+
+    double magnitude(const Vector2D& v){
+        return sqrt(pow(v.x,2)+pow(v.y,2));
+    }
+
+    double angle(const Vector2D& v1, const Vector2D& v2){
+        return acos(dot(v1,v2)/(magnitude(v1)*magnitude(v2)));
+    }
+
+    Transform2D& integrate_twist(const Twist2D&tw){
+        Vector2D v = {tw.xdot,tw.ydot};
+        Transform2D tf(v,tw.thetadot);
+        return tf;
+    }
+
+
+
+
 }

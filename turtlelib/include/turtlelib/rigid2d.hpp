@@ -11,6 +11,11 @@ namespace turtlelib
     /// \brief PI.  Not in C++ standard until C++20.
     constexpr double PI=3.14159265358979323846;
 
+    /// \brief turn any angle into the equivalent angle in the interval(-pi,pi)
+    /// \param rad - angle in radians
+    /// \return double rad - the angle in interval(-pi,pi)
+    double normalize_angle(double rad);
+
     /// \brief approximately compare two floating-point numbers using
     ///        an absolute comparison
     /// \param d1 - a number to compare
@@ -62,12 +67,57 @@ namespace turtlelib
 
         /// \brief the y coordinate
         double y = 0.0;
+
+        /// \brief add vector to the original one
+        /// rhs- input vector
+        Vector2D & operator +=(const Vector2D & rhs);
+
+        /// \brief minus an vector to the original one
+        /// rhs - input vector
+        Vector2D & operator -=(const Vector2D & rhs);
+
+        /// \brief multiply the vector with a scalar
+        /// rhs - input vector
+        Vector2D & operator *=(const double scalar);
     };
 
     /// \brief normalize the 2D vector
     /// v input vector
     /// output the normalized vector
     Vector2D Vector2Dnormalize(Vector2D v);
+
+    /// \brief add two vectors
+    /// lhs, rhs - input vectors
+    Vector2D & operator+(Vector2D &lhs,const Vector2D & rhs);
+
+    /// \brief vectors subtraction
+    /// lhs, rhs- input vectors
+    Vector2D & operator-(Vector2D &lhs,const Vector2D & rhs);
+
+    /// \brief multiplay vector by a scalar on the right
+    /// lhs, an vector
+    /// scalar- an scalar
+    Vector2D & operator*(Vector2D &lhs,const double scalar);
+
+    /// \brief multiplay vector by a scalar on the left
+    /// lhs, an vector
+    /// scalar- an scalar
+    Vector2D & operator*(const double scalar,Vector2D &lhs);
+
+    /// \brief the dot product of two vectors
+    /// -lhs, rhs two input vectors
+    /// \return the dot product
+    double dot(const Vector2D &lhs ,const Vector2D & rhs);
+
+    /// \brief compute the magnitude of the vector
+    /// vector- the input vector
+    /// \return the magnitude of the vector
+    double magnitude(const Vector2D& vector);
+
+    /// \brief compute the angle between two vectors
+    /// input rwo vectors
+    /// return in radians
+    double angle(const Vector2D& , const Vector2D&);
 
     /// \brief output a 2 dimensional vector as [xcomponent ycomponent]
     /// os - stream to output to
@@ -104,6 +154,7 @@ struct Twist2D{
     double ydot;
     };
 
+    
     /// \brief a rigid body transformation in 2 dimensions
     class Transform2D
     {
@@ -170,6 +221,12 @@ struct Twist2D{
     /// \param is - an input stream
     /// \param tw - the twist to input
     std::istream & operator>>(std::istream & is, Twist2D & tw);
+
+    ///\brief compute the transformation corresponding to a rigid body follow
+    /// twist at a given time-unit
+    /// input - 2d twist
+    Transform2D& integrate_twist(const Twist2D&);
+    
 
 
 
