@@ -220,16 +220,7 @@ struct Twist2D{
     /// \brief input a 3 dimensional twist
     /// \param is - an input stream
     /// \param tw - the twist to input
-    std::istream & operator>>(std::istream & is, Twist2D & tw);
-
-    ///\brief compute the transformation corresponding to a rigid body follow
-    /// twist at a given time-unit
-    /// input - 2d twist
-    Transform2D& integrate_twist(const Twist2D&);
-    
-
-
-
+    std::istream & operator>>(std::istream & is, Twist2D & tw);   
 
     /// \brief should print a human readable version of the transform:
     /// An example output:
@@ -249,6 +240,11 @@ struct Twist2D{
     /// \return the composition of the two transforms
     /// HINT: This function should be implemented in terms of *=
     Transform2D operator*(Transform2D lhs, const Transform2D & rhs);
+
+    ///\brief compute the transformation corresponding to a rigid body follow
+    /// twist at a given time-unit
+    /// input - 2d twist
+    Transform2D integrate_twist(const Twist2D&);
 
 }
 

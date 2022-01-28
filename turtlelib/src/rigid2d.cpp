@@ -6,7 +6,7 @@
 namespace turtlelib{
 
     double normalize_angle(double rad){
-        if ((rad>-PI) & (rad<=PI)) return rad;
+        if ((rad>=-PI) & (rad<=PI)) return rad;
         int factor = floor(rad/PI);
         if (factor<0)factor+=1;
         rad  = rad-factor*PI;
@@ -167,7 +167,7 @@ namespace turtlelib{
         return acos(dot(v1,v2)/(magnitude(v1)*magnitude(v2)));
     }
 
-    Transform2D& integrate_twist(const Twist2D&tw){
+    Transform2D integrate_twist(const Twist2D&tw){
         Vector2D v = {tw.xdot,tw.ydot};
         Transform2D tf(v,tw.thetadot);
         return tf;
