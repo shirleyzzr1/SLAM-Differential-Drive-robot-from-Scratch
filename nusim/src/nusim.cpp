@@ -13,8 +13,8 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <std_srvs/Empty.h>
+#include <sensor_msgs/JointState.h>
 #include "nusim/pose.h"
-
 /// \brief the x,y,theta of the robot configuration
 static double sx,sy,stheta;
 
@@ -146,18 +146,32 @@ int main(int argc, char ** argv){
     //define the markerarray here
     visualization_msgs::MarkerArray markerArray;
 
+    //fill all the markers 
+    drawmarker(markerArray);
+    //publish the markerarray
+    vis_pub.publish( markerArray);
+
+    ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>( "/joint_states",1);
+    sensor_msgs::JointState jointstate;
+    jointstate.name.push_back("red/wheel_left_joint");
+    jointstate.name.push_back("red/wheel_right_joint");
+
+    jointstate.position.push_back(0.0);
+    jointstate.position.push_back(0.0);
+    //joint_pub.publish(jointstate);
+
+
     while (ros::ok())
     {
         //broadcast the transformfrom world frame to robot frame
         transform(sx,sy,stheta);
-        //fill all the markers 
-        drawmarker(markerArray);
-        //publish the markerarray
-        vis_pub.publish( markerArray);
+        //publish joint states
+        jointstate.header.stamp = ros::Time::now();
+        joint_pub.publish(jointstate);
         msg_timestep.data = timestep;
         //publish the timestep
         timestep_pub.publish(msg_timestep);
-        ros::spinOnce();
+        // ros::spinOnce();
         //ros::spin();
         r.sleep();
     }

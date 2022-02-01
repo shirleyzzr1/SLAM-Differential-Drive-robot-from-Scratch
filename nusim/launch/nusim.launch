@@ -1,6 +1,6 @@
 <launch>
   <arg name="use_rviz" default ="true" />
-  <arg name="use_jsp" default="true" />
+  <arg name="use_jsp" default="false" />
   <arg name="robot_color" default="red" />
   <arg name = "~x0" default="0"/>
   <arg name = "~y0" default="0"/>
@@ -12,7 +12,7 @@
   </group>
   <!-- load yaml file into rosparam -->
   <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
-  <group ns="red">
+
     <!-- load the urdf file into the parameter server -->
     <param name="robot_description" command="xacro '$(find nusim)/urdf/turtlebot3_burger.urdf.xacro' color:=red" />
 	
@@ -25,7 +25,6 @@
 	  and publish the joint values on /joint_states --> 
       <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
     </group>
-
     <!-- read nusim node and load the parameters inside -->
     <node pkg="nusim" type="nusim" name="nusim" output="screen" >
     	<param name = "~x0" value = "$(arg ~x0)"/>
@@ -33,7 +32,5 @@
     	<param name = "~theta0" value = "$(arg ~theta0)"/>
       <param name = "~rate" value = "$(arg ~rate)"/>
     </node>
-  </group>
-
   
  </launch>

@@ -27,7 +27,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>
@@ -65,7 +65,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/left_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="${color}"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -97,7 +97,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/right_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="${color}"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -160,7 +160,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/lds.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="${color}"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
