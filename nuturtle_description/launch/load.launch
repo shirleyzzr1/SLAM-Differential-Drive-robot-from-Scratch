@@ -1,6 +1,9 @@
 <launch>
+  <!--choose to use rviz or not-->
   <arg name="use_rviz" default ="true" />
+  <!--choose to use joint state publisher or not-->
   <arg name="use_jsp" default="true" />
+  <!--choose the robot color-->
   <arg name="robot_color" default="red" />
 
   <!-- load the urdf into the parameter server -->
@@ -13,7 +16,7 @@
   
   <group if="$(arg use_rviz)">
     <!-- rviz will enable us to see the robot -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuturtle_description)/config/basic.rviz"/> />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuturtle_description)/config/basic.rviz -f $(arg robot_color)/base_footprint"/> />
   </group>
 
   <group if="$(arg use_jsp)">
