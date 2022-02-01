@@ -14,12 +14,21 @@ namespace turtlelib{
     }
 
     std::ostream & operator<<(std::ostream & os, const Vector2D & v){
-        os << "[" << v.x << " " << v.y << "]" << std::endl;
+        os << "[" << v.x << " " << v.y << "]";
         return os;
     }
 
     std::istream & operator>>(std::istream & is, Vector2D & v){
-        is >> v.x >> v.y;
+        char c1 = is.peek();
+        if (c1=='['){
+            is.get();
+            v.x =  is.get();
+            is.get();
+            v.y = is.get();
+        }
+        else{
+            is >> v.x >> v.y;
+        }
         return is;
     }
 
@@ -34,7 +43,7 @@ namespace turtlelib{
         
         os << "deg: " << rad2deg(tf.rotation()) << " "
         <<"x: " << tf.translation().x<< " "
-        <<"y: " << tf.translation().y << std::endl;
+        <<"y: " << tf.translation().y;
         return os;
     }
 
@@ -61,7 +70,7 @@ namespace turtlelib{
 
     Transform2D::Transform2D(){
         this->radians = 0;
-        Vector2D v = {1,1};
+        Vector2D v = {0,0};
         this->trans = v;
     }
 
@@ -114,7 +123,7 @@ namespace turtlelib{
 
     std::ostream & operator<<(std::ostream & os, const Twist2D & tw){
         os << "[ " << tw.thetadot << " " << tw.xdot << " " << tw.ydot 
-        << " " << "]" << std::endl;
+        << " " << "]";
         return os;
     }
 
