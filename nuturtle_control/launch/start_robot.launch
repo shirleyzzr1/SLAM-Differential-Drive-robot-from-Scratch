@@ -1,0 +1,15 @@
+<launch>
+  <!--this arg can be 'circle', 'teleop','none'-->
+  <arg name = "cmd_src" default="none" />
+  <!--the arg can be 'nusim', 'localhost','<turtlebotname>','none'-->
+  <arg name = "robot" default= "nusim"/>
+  <arg name = "use_rviz" default = "false"/>
+  <!-- load yaml file into rosparam -->
+  <rosparam command="load" file="$(find nutrutel_description)/config/diff_params.yaml" />
+  <!--load rviz is use_rivz is set to true-->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" 
+        if="$(eval arg('use_rviz') == 'true')"/>
+  
+  
+
+</launch>

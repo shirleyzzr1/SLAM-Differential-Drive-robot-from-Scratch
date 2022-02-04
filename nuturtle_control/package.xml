@@ -2,18 +2,18 @@
 <package format="2">
   <name>nuturtle_control</name>
   <version>0.0.0</version>
-  <description>The nuturtle_control package</description>
+  <description>for simulation and real robot</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="shirleyzzr@todo.todo">shirleyzzr</maintainer>
+  <maintainer email="zhuoruzhang2021@northwestern.edu.cn">zhuoruzhang</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>GPLv2</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
@@ -50,8 +50,17 @@
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
+  <build_depend>nuturtlebot_msgs</build_depend> 
+  <build_depend>message_generation</build_depend>
+  <build_depend>turtlelib</build_depend>
+
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
+  <exec_depend>rviz</exec_depend>
+  <exec_depend>nuturtlebot_msgs</exec_depend> 
+  <exec_depend>turtlelib</exec_depend>
+  <exec_depend>message_generation</exec_depend>
+
 
 
   <!-- The export tag contains other, unspecified, tags -->

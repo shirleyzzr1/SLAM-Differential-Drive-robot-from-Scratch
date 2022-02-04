@@ -8,7 +8,7 @@ project(nuturtle_control)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
+  roscpp nuturtlebot_msgs turtlelib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nuturtle_control
-#  CATKIN_DEPENDS roscpp
+  CATKIN_DEPENDS roscpp nuturtlebot_msgs turtlelib
 #  DEPENDS system_lib
 )
 
@@ -202,3 +202,8 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+include_directories(${catkin_INCLUDE_DIRS})
+
+add_executable(${PROJECT_NAME} src/turtle_interface.cpp src/odometry.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
