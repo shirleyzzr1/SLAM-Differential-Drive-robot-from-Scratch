@@ -145,13 +145,13 @@ namespace turtlelib
     std::istream & operator>>(std::istream & is, Vector2D & v);
 
     /// \brief A 2-Dimensional twist
-struct Twist2D{
-    /// \brief the angular component of a twist
-    double thetadot;
-    /// \brief the linear x component of a twist
-    double xdot;
-    /// \brief the linear y component of t twist
-    double ydot;
+    struct Twist2D{
+        /// \brief the angular component of a twist
+        double thetadot;
+        /// \brief the linear x component of a twist
+        double xdot;
+        /// \brief the linear y component of t twist
+        double ydot;
     };
 
     

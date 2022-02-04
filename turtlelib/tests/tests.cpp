@@ -8,7 +8,7 @@ TEST_CASE("vector test","[vectors]"){
     std::ostringstream out;
     Vector2D v1 = {1,2};
     out << v1;
-    REQUIRE( "[1 2]\n"==out.str() );
+    REQUIRE( "[1 2]"==out.str() );
 
     std::istringstream in("1 2");
     Vector2D v2;
@@ -27,14 +27,14 @@ TEST_CASE("transform test","[transform2D]"){
     std::ostringstream out1;
     Transform2D tf1 ;
     out1 << tf1;
-    REQUIRE( "deg: 0 x: 1 y: 1\n"==out1.str() );
+    REQUIRE( "deg: 0 x: 0 y: 0"==out1.str() );
 
     Vector2D v2 = {2,1};
     std::ostringstream out2;
 
     Transform2D tf2(v2);
     out2 << tf2;
-    REQUIRE( "deg: 0 x: 2 y: 1\n"==out2.str() );
+    REQUIRE( "deg: 0 x: 2 y: 1"==out2.str() );
 
     double radius = 2.2;
     Transform2D tf3(radius);
@@ -56,12 +56,12 @@ TEST_CASE("transform test","[transform2D]"){
     tf6 = tf4*tf5;
     std::ostringstream out3;
     out3 << tf6;
-    REQUIRE( "deg: 0 x: 0 y: 0\n"==out3.str() );
+    REQUIRE( "deg: 0 x: 0 y: 0"==out3.str() );
 
     tf4*=tf5;
     std::ostringstream out4;
     out4 << tf4;
-    REQUIRE( "deg: 0 x: 0 y: 0\n"==out4.str() );
+    REQUIRE( "deg: 0 x: 0 y: 0"==out4.str() );
     
 }
 
@@ -75,5 +75,38 @@ TEST_CASE("transform and vectors","[]"){
 
     REQUIRE(v2.x==2);
     REQUIRE(v2.y == 4);
+}
+    static constexpr auto zero_margin = std::numeric_limits<double>::epsilon()*100;
+TEST_CASE(){
+    /// inverse of the identity transformation is the identity transformation
+    const Transform2D tf1{};
 
+    const auto t1f = tf1.inv();
+    CHECK(t1f.translation().x == Approx(0.0).margin(zero_margin));
+    CHECK(t1f.translation().y == Approx(0.0).margin(zero_margin));
+}
+/// Test 2
+TEST_CASE(){
+    const auto tf = Transform2D({3.0, 5.0}, PI/2.0);
+    std::stringstream ss;
+    ss << tf;
+    CHECK(ss.str() == "deg: 90 x: 3 y: 5");
+    Transform2D tfin{};
+    ss >> tfin;
+    CHECK(tfin.rotation() == Approx(PI/2.0));
+    CHECK(tfin.translation().x == 3.0);
+    CHECK(tfin.translation().y == 5.0);
+}
+/// Test 3
+TEST_CASE(){
+    const auto v = Vector2D{1.0, 3.0};
+    std::stringstream ss;
+    ss << v;
+    CHECK(ss.str() == "[1 3]");
+    Vector2D vin{};
+    ss >> vin;
+    CHECK(vin.x == 1.0);
+    CHECK(vin.y == 3.0);
+     //Code works? [yes, see comments in code]
+     //conceptual questions
 }
