@@ -24,9 +24,11 @@ static int timestep;
 /// \brief reset the timestep and reset the robot to (0,0,0)
 /// request input service request message,Empty type
 bool reset_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response& response){
-    sx = 0;
-    sy = 0;
-    stheta = 0;
+    std::vector<double> my_double_list;
+    ros::param::get("/robot_start",my_double_list);
+    sx = my_double_list[0];
+    sy = my_double_list[1];
+    stheta = my_double_list[2];
     timestep = 0;
     return true;
 }
@@ -151,6 +153,8 @@ int main(int argc, char ** argv){
     //publish the markerarray
     vis_pub.publish( markerArray);
 
+
+    //publish joint_states instead of using joint_state_publisher_gui
     ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>( "/joint_states",1);
     sensor_msgs::JointState jointstate;
     jointstate.name.push_back("red/wheel_left_joint");
@@ -171,8 +175,7 @@ int main(int argc, char ** argv){
         msg_timestep.data = timestep;
         //publish the timestep
         timestep_pub.publish(msg_timestep);
-        // ros::spinOnce();
-        //ros::spin();
+        ros::spinOnce();
         r.sleep();
     }
     return 0;

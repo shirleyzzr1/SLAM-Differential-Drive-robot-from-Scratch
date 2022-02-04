@@ -7,6 +7,8 @@
   <xacro:property name="props" value="${xacro.load_yaml(yaml_file)}"/>
   <xacro:property name="wheel_radius" value="${props['wheel_radius']}" />
   <xacro:property name="track_width" value="${props['track_width']}"/>
+  <xacro:property name="collision_radius" value="${props['collision_radius']}"/>
+
   
   <xacro:arg name ="color" default="black"/>   
   <xacro:property name = "color" value = "$(arg color)"/>
@@ -25,13 +27,19 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/burger_base.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="light_black"/>
+      <material name="${color}"/>
     </visual>
 
     <collision>
       <origin xyz="-0.032 0 0.070" rpy="0 0 0"/>
       <geometry>
-        <box size="0.140 0.140 0.143"/>
+        <xacro:if value="${collision_radius==0.0}">
+          <box size="0.140 0.140 0.143"/>
+        </xacro:if>
+        <xacro:unless value="${collision_radius ==0.0}">
+          <cylinder radius="${collision_radius}" length="0.23"/>
+        </xacro:unless>
+        <!-- <cylinder radius="0.12" length="0.23"/> -->
       </geometry>
     </collision>
 
@@ -57,7 +65,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/left_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="${color}"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -89,7 +97,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/right_tire.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="${color}"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
@@ -152,7 +160,7 @@
       <geometry>
         <mesh filename="package://nuturtle_description/meshes/lds.stl" scale="0.001 0.001 0.001"/>
       </geometry>
-      <material name="${color}"/>
+      <material name="light_black"/>
     </visual>
 
     <collision>
