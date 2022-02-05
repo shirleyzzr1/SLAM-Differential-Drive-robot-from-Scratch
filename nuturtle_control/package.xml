@@ -53,6 +53,11 @@
   <build_depend>nuturtlebot_msgs</build_depend> 
   <build_depend>message_generation</build_depend>
   <build_depend>turtlelib</build_depend>
+  <build_depend>tf2</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>genmsg</build_depend>
+
+
 
   <build_export_depend>roscpp</build_export_depend>
   <exec_depend>roscpp</exec_depend>
@@ -60,6 +65,9 @@
   <exec_depend>nuturtlebot_msgs</exec_depend> 
   <exec_depend>turtlelib</exec_depend>
   <exec_depend>message_generation</exec_depend>
+  <exec_depend>tf2</exec_depend>
+  <exec_depend>tf2_ros</exec_depend>
+  <exec_depend>genmsg</exec_depend>
 
 
 
