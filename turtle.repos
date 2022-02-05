@@ -1,0 +1,5 @@
+repositories:
+  slam-project-shirleyzzr1:
+    type: git
+    url: git@github.com:ME495-Navigation/slam-project-shirleyzzr1.git
+    version: main
