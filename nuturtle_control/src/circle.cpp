@@ -8,7 +8,7 @@ enum class State {STOP, RUN, REVERSE};
 
 static State state = State::STOP;
 static geometry_msgs::Twist twist;
-
+int stop_flag = 0;
 bool stop_callback(std_srvs::Empty::Request &req,std_srvs::Empty::Response &res)
 {
     // process message.  Maybe messages of this type
@@ -62,6 +62,7 @@ int main(int argc, char ** argv)
         switch(state)
         {   
             case State::STOP:
+                if (!stop_flag){
                 // do stop state stuff
                 twist.linear.x = 0;
                 twist.linear.y = 0;
@@ -70,6 +71,7 @@ int main(int argc, char ** argv)
                 twist.angular.y = 0;
                 twist.angular.z = 0;
                 cmd_pub.publish(twist);
+                stop_flag=1;}
                 break;
             case State::REVERSE:
                 // do go state stuff

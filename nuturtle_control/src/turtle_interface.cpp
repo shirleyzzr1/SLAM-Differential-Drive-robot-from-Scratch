@@ -24,9 +24,9 @@ void Message_handle::velocity_callback(const geometry_msgs::Twist& msg){
 
     turtlelib::Vector2D wheel_vel = diffdrive.IK_calculate(tw);
 
-    this->wheel_cmd.left_velocity = wheel_vel.x;
-    this->wheel_cmd.right_velocity = wheel_vel.y;
-    this->wheel_pub.publish(wheel_cmd);
+    this->wheel_cmd.left_velocity = wheel_vel.x/2.84*256;
+    this->wheel_cmd.right_velocity = wheel_vel.y/2.84*256;
+    this->wheel_pub.publish(this->wheel_cmd);
 }
 
 void Message_handle::sensor_callback(const nuturtlebot_msgs::SensorData& msg){
@@ -88,7 +88,7 @@ int main(int argc, char ** argv){
         ros::spinOnce();
         r.sleep();
     }
-    return 0;
+        return 0;
 
     
 

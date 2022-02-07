@@ -216,6 +216,9 @@ target_link_libraries(circle ${catkin_LIBRARIES})
 
 # catch_add_rostest_node(${PROJECT_NAME}_testname test/turtle_interface_test.cpp)
 
+add_executable(tt src/tt.cpp)
+target_link_libraries(tt ${catkin_LIBRARIES})
+
 
 
 

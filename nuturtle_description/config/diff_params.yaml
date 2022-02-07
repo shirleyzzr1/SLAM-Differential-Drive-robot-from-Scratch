@@ -1,6 +1,12 @@
+#the radius of the width
 wheel_radius: 0.033
+#the width of the track
 track_width: 0.018
+#the radius of the collistion cylinder
 collision_radius: 0.11
+#converts between ticks and rad/sec
 motor_cmd_to_radsec: 0.024
+#the max motor commands
 motor_cmd_max: 265
+#converts encoder tiacks to radians
 encoder_ticks_to_rad: 2e+12
