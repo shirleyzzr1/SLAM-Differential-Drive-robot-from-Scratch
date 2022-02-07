@@ -12,7 +12,7 @@ find_package(catkin REQUIRED COMPONENTS catch_ros roscpp)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS roscpp catch_ros
+  CATKIN_DEPENDS catch_ros roscpp
 #  DEPENDS other non-ROS libs
 )
 include_directories(
@@ -25,7 +25,7 @@ include_directories(
 # However, by creating a library (as we are doing here) the library files
 # can be compiled once and used
 # create the turtlelib library 
-add_library(turtlelib src/rigid2d.cpp src/diff_drive.cpp)
+add_library(turtlelib src/diff_drive.cpp src/rigid2d.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(frame_main src/frame_main.cpp)
@@ -51,4 +51,4 @@ install(
 # add_test(NAME Test_of_Turtlelib COMMAND turtlelib_test)
 
 catch_add_test(my_test tests/testros.cpp)
-target_link_libraries(my_test	${catkin_LIBRARIES} turtlelib)
+target_link_libraries(my_test	${catkin_LIBRARIES} ${PROJECT_NAME})

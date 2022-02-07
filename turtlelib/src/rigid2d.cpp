@@ -148,20 +148,20 @@ namespace turtlelib{
         return *this;
     }
    
-    Vector2D & operator+(Vector2D &lhs,const Vector2D & rhs){
+    Vector2D operator+(Vector2D lhs,const Vector2D & rhs){
         return lhs+=rhs;
     }
 
-    Vector2D & operator-(Vector2D &lhs,const Vector2D & rhs){
+    Vector2D operator-(Vector2D lhs,const Vector2D & rhs){
         return lhs-=rhs;
     }
 
-    Vector2D & operator*(Vector2D &lhs,const double scalar){
+    Vector2D  operator*(Vector2D lhs,const double scalar){
         return lhs*=scalar;
     }
 
-    Vector2D & operator*(const double scalar,Vector2D &lhs){
-        return lhs*=scalar;
+    Vector2D  operator*(const double scalar,Vector2D rhs){
+        return rhs*=scalar;
     }
 
     double dot(const Vector2D &lhs ,const Vector2D & rhs){

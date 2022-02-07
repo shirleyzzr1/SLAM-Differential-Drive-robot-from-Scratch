@@ -88,21 +88,21 @@ namespace turtlelib
 
     /// \brief add two vectors
     /// lhs, rhs - input vectors
-    Vector2D & operator+(Vector2D &lhs,const Vector2D & rhs);
+    Vector2D operator+(Vector2D lhs,const Vector2D & rhs);
 
     /// \brief vectors subtraction
     /// lhs, rhs- input vectors
-    Vector2D & operator-(Vector2D &lhs,const Vector2D & rhs);
+    Vector2D operator-(Vector2D lhs,const Vector2D & rhs);
 
     /// \brief multiplay vector by a scalar on the right
     /// lhs, an vector
     /// scalar- an scalar
-    Vector2D & operator*(Vector2D &lhs,const double scalar);
+    Vector2D operator*(Vector2D lhs,const double scalar);
 
     /// \brief multiplay vector by a scalar on the left
     /// lhs, an vector
     /// scalar- an scalar
-    Vector2D & operator*(const double scalar,Vector2D &lhs);
+    Vector2D operator*(const double scalar,Vector2D rhs);
 
     /// \brief the dot product of two vectors
     /// -lhs, rhs two input vectors

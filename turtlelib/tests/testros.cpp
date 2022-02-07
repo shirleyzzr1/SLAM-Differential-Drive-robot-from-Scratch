@@ -1,9 +1,19 @@
 #include<catch_ros/catch.hpp>
 #include"turtlelib/rigid2d.hpp"
+#include "turtlelib/diff_drive.hpp"
 #include <cmath>
 using namespace turtlelib;
+TEST_CASE("test_forward_kinematics",""){
+    DiffDrive diff;
+    diff.set_wheel_pos({5,5});
+    Vector2D wheel_pos = {10,10};
+    diff.FK_calculate(wheel_pos);
+    REQUIRE(diff.bodytwist().thetadot==Approx(0));
+    REQUIRE(diff.bodytwist().xdot==Approx(0));
+
+}
 TEST_CASE("test_normalized_angle_function","test vector"){
-    REQUIRE(normalize_angle(PI)==Approx(-PI));
+    REQUIRE(normalize_angle(PI)==Approx(PI));
     REQUIRE(normalize_angle(-PI)==Approx(-PI));
     REQUIRE(normalize_angle(0)==Approx(0));
     REQUIRE(normalize_angle(-PI/4)==Approx(-PI/4));

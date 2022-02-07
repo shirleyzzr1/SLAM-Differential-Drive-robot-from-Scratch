@@ -1,4 +1,5 @@
 #include "turtlelib/diff_drive.hpp"
+#include <iostream>
 namespace turtlelib{
     DiffDrive::DiffDrive(){
         this->radius = 0.033;
@@ -12,27 +13,24 @@ namespace turtlelib{
     DiffDrive::DiffDrive(float radius,float track):
     radius(radius),track(track){}
 
-    ///\brief add two robot configure together
-    Configure & operator+(Configure& lhs,Configure& rhs){
-        Configure conf;
-        conf.theta = lhs.theta + rhs.theta;
-        conf.x = lhs.x + rhs.x;
-        conf.y = lhs.y + rhs.y;
-    }
-
-
     void DiffDrive::FK_calculate(Vector2D new_wheel_pos){
         /// write the transformation matrix
-        Vector2D temp1{(double)-1/(2*this->track),(double)1/(this->track)};
+        Vector2D temp1{(double)-1/(2*this->track),(double)1/(2*this->track)};
         Vector2D temp2{(double)1/2,(double)1/2};
-        // calulate the wheel_config
+
+        // calulate the wheel_velocity, given the time unit is 1
         this->wheel_velocity = new_wheel_pos-this->wheel_position;
+        // std::cout << "wheel_postion" << new_wheel_pos <<std::endl;
+        // std::cout << "this_wheel_position" << this->wheel_position;
+        // std::cout << "wheel_velocity" << this->wheel_velocity<< std::endl;
+
+        //calculate the body twist;
         this->body_twist.thetadot = dot(this->radius*temp1,this->wheel_velocity);
         this->body_twist.xdot = dot(this->radius*temp2,this->wheel_velocity);
         this->body_twist.ydot = 0;
         this->wheel_position = new_wheel_pos;
 
-        //update the body pos given the time is 1
+        //update the body translation from the previsou configuration given the time is 1
         Transform2D tf;
         tf = integrate_twist(this->body_twist);
         this->body_position *= tf;
@@ -69,6 +67,9 @@ namespace turtlelib{
     }
     void DiffDrive::set_wheel_vel(Vector2D wheel_vel){
         this->wheel_velocity = wheel_vel;
+    }
+    void DiffDrive::set_wheel_pos(Vector2D wheel_pos){
+        this->wheel_position = wheel_pos;
     }
 
 
