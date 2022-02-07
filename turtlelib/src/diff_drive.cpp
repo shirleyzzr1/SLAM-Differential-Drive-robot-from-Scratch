@@ -37,6 +37,9 @@ namespace turtlelib{
     }
 
     Vector2D DiffDrive::IK_calculate(Twist2D& twist){
+        if(twist.ydot){
+            throw std::logic_error("the wheels cannot slipping");
+        }
         this->wheel_velocity.x = (-this->track*twist.thetadot+twist.xdot)/this->radius;
         this->wheel_velocity.y = (this->track*twist.thetadot+twist.xdot)/this->radius;
         return this->wheel_velocity;

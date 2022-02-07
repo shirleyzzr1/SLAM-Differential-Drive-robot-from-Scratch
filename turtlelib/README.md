@@ -1,10 +1,11 @@
 # README
 
 ### Turtlelib Library
-A library for handling transformations in SE(2) and other turtlebot-related math.
+A library for handling transformations in SE(2) and differential drive robot motion.
 
 ### Components
 - rigid2d - Handles 2D rigid body transformations
+- diff_drive - Handles differential drive robot configuration
 - frame_main - Perform some rigid body computations based on user input
 
 ### Conceptual Questions
