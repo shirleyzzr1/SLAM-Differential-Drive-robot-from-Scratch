@@ -3,7 +3,7 @@
 #include <cmath>
 using namespace turtlelib;
 TEST_CASE("test_normalized_angle_function","test vector"){
-    REQUIRE(normalize_angle(PI)==Approx(PI));
+    REQUIRE(normalize_angle(PI)==Approx(-PI));
     REQUIRE(normalize_angle(-PI)==Approx(-PI));
     REQUIRE(normalize_angle(0)==Approx(0));
     REQUIRE(normalize_angle(-PI/4)==Approx(-PI/4));

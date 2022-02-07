@@ -19,9 +19,9 @@ namespace turtlelib{
         float track;
 
         Vector2D wheel_velocity;
-        Vector2D wheel_pos;
+        Vector2D wheel_position;
         Twist2D body_twist;
-        Configure body_pos;
+        Transform2D body_position;
     public:
         /// \brief use some default settings to create a diffdrive
         DiffDrive();
@@ -34,13 +34,27 @@ namespace turtlelib{
         /// configuration given the new wheel position
         /// \param new_wheel_pos: the new pos of the wheel
         /// \param period: the period for the robot moving
-        void FK_calculate(Vector2D new_wheel_pos,double period);
+        void FK_calculate(Vector2D new_wheel_pos);
 
         /// \brief use inverse kinematics to update the wheel
         /// velocity given the body twist
         /// \param twist the body twist
         Vector2D IK_calculate(Twist2D& twist); 
+
+        void set_param(float radius,float track);
+
+        Vector2D wheel_vel();
+
+        Vector2D& wheel_pos();
+
+        Twist2D bodytwist();
+
+        Transform2D body_pos();
+
+        void set_body_pos(Transform2D body_pos);
         
+        void set_wheel_vel(Vector2D wheel_vel);
+
     };
 }
 #endif

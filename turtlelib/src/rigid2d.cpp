@@ -177,9 +177,21 @@ namespace turtlelib{
     }
 
     Transform2D integrate_twist(const Twist2D&tw){
-        Vector2D v = {tw.xdot,tw.ydot};
-        Transform2D tf(v,tw.thetadot);
-        return tf;
+        if (tw.thetadot==0){
+            Vector2D v={tw.xdot,tw.ydot};
+            Transform2D Tbbp(v);
+            return Tbbp;
+        }
+        else{
+            double ys = -tw.xdot / tw.thetadot;
+            double xs = tw.ydot / tw.thetadot;
+            Vector2D psb = {xs,ys};
+            Transform2D Tsb(psb);
+            Transform2D Tssp(tw.thetadot);
+            Transform2D Tbs = Tsb.inv();
+            Transform2D Tbbp =  Tbs * Tssp * Tsb;
+            return Tbbp;
+        }
     }
 
 
