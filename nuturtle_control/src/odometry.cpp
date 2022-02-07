@@ -14,8 +14,6 @@
 #include <std_msgs/Float64.h>
 
 
-static tf2_ros::TransformBroadcaster br;
-
 class Message_handle{
 public:
     std::string body_id,odom_id,wheel_left,wheel_right; 
@@ -28,24 +26,24 @@ public:
     bool set_pose_callback(nusim::pose::Request &req,nusim::pose::Response &res);
     void joint_state_callback(const sensor_msgs::JointState& msg);
 
-
 };
 
 /// \brief broadcast the transform from world frame to robot red/base_footprint frame
 /// x,y,theta input the pose of the robot relative to the world frame
 void Message_handle::transform(){
+    static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = this->odom_id ;
     transformStamped.child_frame_id = this->body_id ;
 
     //first set the translation
-    transformStamped.transform.translation.x = this->diffdrive.body_pos().x;
-    transformStamped.transform.translation.y = this->diffdrive.body_pos().y;
+    transformStamped.transform.translation.x = this->diffdrive.body_pos().translation().x;
+    transformStamped.transform.translation.y = this->diffdrive.body_pos().translation().y;
     transformStamped.transform.translation.z = 0.0;
     //set the rotation og the robot
     tf2::Quaternion q;
-    q.setRPY(0, 0, this->diffdrive.body_pos().theta);
+    q.setRPY(0, 0, this->diffdrive.body_pos().rotation());
     transformStamped.transform.rotation.x = q.x();
     transformStamped.transform.rotation.y = q.y();
     transformStamped.transform.rotation.z = q.z();
@@ -53,21 +51,22 @@ void Message_handle::transform(){
     br.sendTransform(transformStamped);
 }
 void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
+
     nav_msgs::Odometry odom;
     odom.header.frame_id = this->odom_id;
     odom.header.stamp = ros::Time::now();
     odom.child_frame_id = this->body_id;
     turtlelib::Vector2D wheel_vel{msg.velocity[0],msg.velocity[1]};
     turtlelib::Vector2D wheel_pos{msg.position[0],msg.position[1]};
-    this->diffdrive.FK_calculate(wheel_pos,wheel_vel);
+    this->diffdrive.FK_calculate(wheel_pos);
     
     geometry_msgs::Pose pos;
-    pos.position.x = this->diffdrive.body_pos().x;
-    pos.position.y = this->diffdrive.body_pos().y;
+    pos.position.x = this->diffdrive.body_pos().translation().x;
+    pos.position.y = this->diffdrive.body_pos().translation().y;
     pos.position.z = 0;
 
     tf2::Quaternion q;
-    q.setRPY(0, 0, this->diffdrive.body_pos().theta);
+    q.setRPY(0, 0, this->diffdrive.body_pos().rotation());
     pos.orientation.x = q.x();
     pos.orientation.y = q.y();
     pos.orientation.z = q.z();
@@ -77,21 +76,14 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
     geometry_msgs::Twist twist;
     odom.twist.twist.linear.x = this->diffdrive.bodytwist().xdot;
     odom.twist.twist.linear.y = this->diffdrive.bodytwist().ydot;
-    odom.twist.twist.linear.z = 0;
-
-    odom.twist.twist.angular.x = 0;
-    odom.twist.twist.angular.y = 0;
     odom.twist.twist.angular.z = this->diffdrive.bodytwist().thetadot;
-
-
 
     odom_pub.publish(odom);
 
-
 }
 bool Message_handle::set_pose_callback(nusim::pose::Request &req,nusim::pose::Response &res){
-    turtlelib::Configure conf{req.theta,req.x,req.y};
-    diffdrive.set_body_pos(conf);
+    turtlelib::Vector2D pos = {req.x,req.y};
+    diffdrive.set_body_pos(turtlelib::Transform2D(pos,req.theta));
     return true;
 }
 int main(int argc, char ** argv){
@@ -99,39 +91,41 @@ int main(int argc, char ** argv){
     ros::init(argc, argv, "odometry");
 
     double radius,track;
-    ros::param::get("radius",radius);
-    ros::param::get("track",track);
+    ros::param::get("/wheel_radius",radius);
+    ros::param::get("/track_width",track);
 
     Message_handle msgh;
     msgh.diffdrive.set_param(radius,track);
     ros::NodeHandle n;
-    if (!n.getParam("body_id", msgh.body_id))
+    if (!n.getParam("/body_id", msgh.body_id))
     {
-        ROS_DEBUG_STREAM("not initialize the body id"); 
+        ROS_INFO_STREAM("not initialize the body id"); 
         ros::shutdown();
     }
-    if (!n.getParam("left_whee_joint", msgh.wheel_left))
+    if (!n.getParam("/wheel_left", msgh.wheel_left))
     {
-        ROS_DEBUG_STREAM("not specify the left_wheel_joint"); 
+        ROS_INFO_STREAM("not specify the left_wheel_joint"); 
         ros::shutdown();
     }
-    if (!n.getParam("right_whee_joint", msgh.wheel_right))
+    if (!n.getParam("/wheel_right", msgh.wheel_right))
     {
-        ROS_DEBUG_STREAM("not specify the right_wheel_joint"); 
+        ROS_INFO_STREAM("not specify the right_wheel_joint"); 
         ros::shutdown();
     }
-    n.param<std::string>("odom_id", msgh.odom_id, "odom");
+    n.param<std::string>("/odom_id", msgh.odom_id, "odom");
 
     //subscribe to the cmd_vel
-    ros::Subscriber joint_sub = n.subscribe("joint_states",1000,
-        &Message_handle::joint_state_callback,&msgh);
-
+    ros::Subscriber joint_sub = n.subscribe("joint_states",1000, &Message_handle::joint_state_callback,&msgh);     
     msgh.odom_pub = n.advertise<nav_msgs::Odometry>("odom", 1000);
 
     msgh.set_pose = n.advertiseService("set_pose",&Message_handle::set_pose_callback,&msgh);
 
+    ros::Rate r(50);
     while(ros::ok()){
         msgh.transform();
+        ros::spinOnce();
+        r.sleep();
     }
+    return 0;
 
 }

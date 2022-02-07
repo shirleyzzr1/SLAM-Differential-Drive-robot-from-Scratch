@@ -8,22 +8,23 @@
   <license>BSD</license>
 
   <!-- Use build_depend for packages you need at compile time: -->
-  <build_depend>std_msgs</build_depend> -->
+  <build_depend>std_msgs</build_depend> 
   <build_depend>roscpp</build_depend>
   <build_depend>tf2</build_depend>
   <build_depend>tf2_ros</build_depend>
   <build_depend>genmsg</build_depend>
   <build_depend>message_generation</build_depend>
+  <build_depend>turtlelib</build_depend>
 
   <!-- Use build_export_depend for packages you need in order to build against this package: -->
-  <build_export_depend>std_msgs</build_export_depend> -->
+  <build_export_depend>std_msgs</build_export_depend> 
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>tf2</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
   <!-- Use buildtool_depend for build tool packages: -->
   <buildtool_depend>catkin</buildtool_depend>
   <!-- Use exec_depend for packages you need at runtime: -->
-  <exec_depend>message_runtime</exec_depend> -->
+  <exec_depend>message_runtime</exec_depend> 
   <exec_depend>roscpp</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>joint_state_publisher_gui</exec_depend>
@@ -31,6 +32,8 @@
   <exec_depend>tf2_ros</exec_depend>
   <exec_depend>rviz</exec_depend>
   <exec_depend>std_msgs</exec_depend>
+  <exec_depend>turtlelib</exec_depend>
+
 
 
 

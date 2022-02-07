@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(nuturtle_control)
-
+set(DEFAULT_BUILD_TYPE "Debug")
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -8,7 +8,7 @@ project(nuturtle_control)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros genmsg
+  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros genmsg catch_ros
 )
 
 ## System dependencies are found with CMake's conventions
@@ -213,6 +213,8 @@ target_link_libraries(odometry ${catkin_LIBRARIES})
 add_executable(circle src/circle.cpp)
 target_link_libraries(circle ${catkin_LIBRARIES})
 # add_dependencies(circle circle_gencpp)
+
+# catch_add_rostest_node(${PROJECT_NAME}_testname test/turtle_interface_test.cpp)
 
 
 

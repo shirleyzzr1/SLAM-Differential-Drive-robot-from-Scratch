@@ -44,7 +44,8 @@ bool control_callback(nuturtle_control::control::Request &req,nuturtle_control::
 
 int main(int argc, char ** argv)
 {
-    ros::init(argc, argv, "circle.cpp");
+    ros::init(argc, argv, "circle");
+
     ros::NodeHandle n;
 
     // read parameters, create publishers/subscribers
@@ -54,7 +55,7 @@ int main(int argc, char ** argv)
 
     ros::Publisher cmd_pub = n.advertise<geometry_msgs::Twist>("cmd_vel", 1000);
     double frequency;
-    ros::param::get("frequency",frequency);
+    ros::param::get("~frequency",frequency);
     ros::Rate r(frequency);
     while(ros::ok())
     {

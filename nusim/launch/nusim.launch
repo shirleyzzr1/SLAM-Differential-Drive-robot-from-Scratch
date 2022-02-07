@@ -6,6 +6,8 @@
   <arg name = "~y0" default="0"/>
   <arg name = "~theta0" default  = "0"/>
   <arg name = "~rate" default = "50"/>
+  <arg name = "x_length" default = "2"/>
+  <arg name = "y_length" default = "2"/>
   <group if="$(arg use_rviz)">
     <!-- rviz will enable us to see the robot -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" />
@@ -25,12 +27,14 @@
 	  and publish the joint values on /joint_states --> 
       <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
     </group>
-    <!-- read nusim node and load the parameters inside -->
+    <!-- read nusim node and load the parameters inside launch-prefix ="gdb args"-->
     <node pkg="nusim" type="nusim" name="nusim" output="screen" >
     	<param name = "~x0" value = "$(arg ~x0)"/>
     	<param name = "~y0" value = "$(arg ~y0)"/>
     	<param name = "~theta0" value = "$(arg ~theta0)"/>
       <param name = "~rate" value = "$(arg ~rate)"/>
+      <param name = "x_length" value = "$(arg x_length)"/>
+      <param name = "y_length" value = "$(arg y_length)" />
     </node>
   
  </launch>

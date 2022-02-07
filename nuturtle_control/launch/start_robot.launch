@@ -1,15 +1,62 @@
 <launch>
   <!--this arg can be 'circle', 'teleop','none'-->
-  <arg name = "cmd_src" default="none" />
+  <arg name = "cmd_src" default="circle" />
   <!--the arg can be 'nusim', 'localhost','<turtlebotname>','none'-->
-  <arg name = "robot" default= "nusim"/>
-  <arg name = "use_rviz" default = "false"/>
+  <arg name = "robot" default= "none"/>
+  <arg name = "use_rviz" default = 'false'/>
+  <arg name = "frequency" default = "100" />
+  <arg name = "odom_id" default = "odom" />
+  <arg name = "use_jsp" default = 'false' />
+  <arg name = "x_length" default = "3"/>
+  <arg name = "y_length" default = "3"/>
+  <arg name = "~x0" default="0"/>
+  <arg name = "~y0" default="0"/>
+  <arg name = "~theta0" default  = "0"/>
+  <arg name = "~rate" default = "50"/>
+
+  <param name = "odom_id" value = "$(arg odom_id)"/>
+  <param name = "body_id" value = "red/base_footprint" />
+  <param name = "wheel_left" value = "red/wheel_left_joint"/>
+  <param name = "wheel_right" value = "red/wheel_right_joint" />
   <!-- load yaml file into rosparam -->
-  <rosparam command="load" file="$(find nutrutel_description)/config/diff_params.yaml" />
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+  <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
+
   <!--load rviz is use_rivz is set to true-->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" 
-        if="$(eval arg('use_rviz') == 'true')"/>
-  
-  
+        if="$(eval arg('use_rviz') == true)"/>
+
+  <node name="circle" pkg="nuturtle_control" type="circle"  
+      if="$(eval arg('cmd_src') == 'circle')">
+        <param name = "frequency" value = "$(arg frequency)"/>
+  </node>
+
+  <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"  />
+
+  <node name="odometry" pkg="nuturtle_control" type="odometry" output="screen"/> 
+
+  <node name="turtlebot3_teleop_key" pkg="turtlebot3" type="turtlebot3_teloop_key"  
+      if="$(eval arg('cmd_src') == 'teleop')"/>
+
+  <node name="nusim" pkg="nusim" type="nusim"  output="screen"
+      if="$(eval arg('robot') == 'nusim')">
+      <param name = "x_length" value = "$(arg x_length)"/>
+      <param name = "y_length" value = "$(arg y_length)" />
+  </node>
+
+  <!-- load the urdf into the parameter server -->
+  <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro' color:=red" />
+
+  <!-- The robot_state_publisher reads the urdf from /robot_description parameter
+      and listens to joint information on the /joint_states topic -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <node pkg="tf" type="static_transform_publisher" name="red_broadcaster" args="0 0 0 0 0 0 1 world odom 100"/>
+
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"
+    if="$(eval arg('use_jsp') == true)"/>
+
+
+
 
 </launch>
