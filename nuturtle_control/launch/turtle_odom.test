@@ -1,0 +1,18 @@
+<launch>
+  <arg name = "odom_id" default = "odom" />
+  <param name = "odom_id" value = "$(arg odom_id)"/>
+  <param name = "body_id" value = "red/base_footprint" />
+  <param name = "wheel_left" value = "red/wheel_left_joint"/>
+  <param name = "wheel_right" value = "red/wheel_right_joint" />
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+  <node name="odometry" pkg="nuturtle_control" type="odometry"  />
+  <test test-name = "turtle_odom_test" pkg="nuturtle_control" type="turtle_odom_test"/>
+  <!-- load the urdf into the parameter server -->
+  <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro' color:=red" />
+
+  <!-- The robot_state_publisher reads the urdf from /robot_description parameter
+      and listens to joint information on the /joint_states topic -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
+
+</launch>

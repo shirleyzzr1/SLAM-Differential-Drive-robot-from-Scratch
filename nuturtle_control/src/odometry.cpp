@@ -56,7 +56,8 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
     odom.header.frame_id = this->odom_id;
     odom.header.stamp = ros::Time::now();
     odom.child_frame_id = this->body_id;
-    turtlelib::Vector2D wheel_vel{msg.velocity[0],msg.velocity[1]};
+    if(msg.velocity.size()==0) turtlelib::Vector2D wheel_vel{0,0};
+    else{turtlelib::Vector2D wheel_vel{msg.velocity[0],msg.velocity[1]};}
     turtlelib::Vector2D wheel_pos{msg.position[0],msg.position[1]};
     this->diffdrive.FK_calculate(wheel_pos);
     

@@ -1,0 +1,5 @@
+<launch>
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+  <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"  />
+  <test test-name = "turtle_interface_test" pkg="nuturtle_control" type="turtle_interface_test"/>
+</launch>

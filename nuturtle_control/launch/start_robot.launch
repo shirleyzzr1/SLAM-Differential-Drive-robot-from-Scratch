@@ -25,14 +25,16 @@
   <!--load rviz is use_rivz is set to true-->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" 
         if="$(eval arg('use_rviz') == true)"/>
+        
+  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"
+    if="$(eval arg('use_jsp') == true)"/>
 
   <node name="circle" pkg="nuturtle_control" type="circle"  
       if="$(eval arg('cmd_src') == 'circle')">
         <param name = "frequency" value = "$(arg frequency)"/>
   </node>
 
-  <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"  />
-
+  <!-- <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"  /> -->
   <node name="odometry" pkg="nuturtle_control" type="odometry" output="screen"/> 
 
   <node name="turtlebot3_teleop_key" pkg="turtlebot3" type="turtlebot3_teloop_key"  
@@ -53,8 +55,7 @@
 
   <node pkg="tf" type="static_transform_publisher" name="red_broadcaster" args="0 0 0 0 0 0 1 world odom 100"/>
 
-  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"
-    if="$(eval arg('use_jsp') == true)"/>
+
 
 
 

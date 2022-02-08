@@ -24,6 +24,10 @@ class Message_handle{
 public:
     ros::Publisher sensor_pub;
     nuturtlebot_msgs::SensorData sensor;
+
+    double max_wheel_vel;
+    double last_left_encoder;
+    double last_right_encoder;
     turtlelib::DiffDrive diffdrive;
     void wheel_callback(const nuturtlebot_msgs::WheelCommands& msg);
 
@@ -185,7 +189,7 @@ void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
     // ROS_INFO("receive_wheel_callback");
     double motor_cmd_to_radsec;
     // ROS_WARN("%d,%d",msg.left_velocity,msg.right_velocity);
-    turtlelib::Vector2D wheel_vel{msg.left_velocity*2.84/256,msg.right_velocity*2.84/256};
+    turtlelib::Vector2D wheel_vel{msg.left_velocity*this->max_wheel_vel/256,msg.right_velocity*this->max_wheel_vel/256};
     // ROS_WARN("next line %f,%f",wheel_vel.x,wheel_vel.y);
     // ROS_INFO("receive_wheel_callback,%lf",wheel_vel.x);
 
@@ -249,6 +253,14 @@ int main(int argc, char ** argv){
 
     Message_handle msgh;
     msgh.diffdrive.set_param(radius,track);
+    msgh.last_left_encoder = 0;
+    msgh.last_right_encoder = 0;
+    //calculate max_wheel_vel given the max_trans_velocity is 0.22m/s
+    turtlelib::Twist2D max_trans = {0,0.22,0};
+    msgh.diffdrive.IK_calculate(max_trans);
+    msgh.max_wheel_vel = abs(msgh.diffdrive.wheel_vel().x);
+    //reset the diffdive wheel_velocity;
+    msgh.diffdrive.set_wheel_vel({0,0});
 
     ros::Subscriber wheel_sub= n.subscribe("/wheel_cmd",1000,&Message_handle::wheel_callback,&msgh);
 

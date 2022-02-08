@@ -3,7 +3,7 @@
 namespace turtlelib{
     DiffDrive::DiffDrive(){
         this->radius = 0.033;
-        this->track = 0.018;
+        this->track = 0.08;
         this->wheel_velocity = {0,0};
         this->wheel_position = {0,0};
         this->body_twist = {0,0,0};

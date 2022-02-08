@@ -8,7 +8,7 @@ set(DEFAULT_BUILD_TYPE "Debug")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros genmsg catch_ros
+  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros genmsg catch_ros rostest
 )
 
 ## System dependencies are found with CMake's conventions
@@ -214,10 +214,16 @@ add_executable(circle src/circle.cpp)
 target_link_libraries(circle ${catkin_LIBRARIES})
 # add_dependencies(circle circle_gencpp)
 
-# catch_add_rostest_node(${PROJECT_NAME}_testname test/turtle_interface_test.cpp)
+catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
+target_link_libraries(turtle_interface_test ${catkin_LIBRARIES})
+add_rostest(launch/turtle_interface.test)
 
-add_executable(tt src/tt.cpp)
-target_link_libraries(tt ${catkin_LIBRARIES})
+
+catch_add_rostest_node(turtle_odom_test tests/turtle_odom_test.cpp)
+target_link_libraries(turtle_odom_test ${catkin_LIBRARIES})
+add_rostest(launch/turtle_odom.test)
+
+add_rostest(launch/turtle_circle.test)
 
 
 

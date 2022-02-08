@@ -4,9 +4,9 @@
 #include "nuturtle_control/control.h"
 /// Static variables used by callbacks here
 
-enum class State {STOP, RUN, REVERSE};
+enum class State {INITIAL,STOP, RUN, REVERSE};
 
-static State state = State::STOP;
+static State state = State::INITIAL;
 static geometry_msgs::Twist twist;
 int stop_flag = 0;
 bool stop_callback(std_srvs::Empty::Request &req,std_srvs::Empty::Response &res)
@@ -61,6 +61,14 @@ int main(int argc, char ** argv)
     {
         switch(state)
         {   
+            case State::INITIAL:
+                twist.linear.x = 0;
+                twist.linear.y = 0;
+                twist.linear.z = 0;
+                twist.angular.x = 0;
+                twist.angular.y = 0;
+                twist.angular.z = 0;
+                cmd_pub.publish(twist);
             case State::STOP:
                 if (!stop_flag){
                 // do stop state stuff
