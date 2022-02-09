@@ -33,8 +33,8 @@ public:
     nuturtlebot_msgs::WheelCommands wheel_cmd;
 
     double max_wheel_vel;
-    double last_left_encoder;
-    double last_right_encoder;
+    double left_encoder;
+    double right_encoder;
 
     double encoder_ticks_to_rad;
     double motor_cmd_to_radsec;
@@ -51,8 +51,10 @@ void Message_handle::velocity_callback(const geometry_msgs::Twist& msg){
     turtlelib::Twist2D tw = {msg.angular.z,msg.linear.x,msg.linear.y};
 
     turtlelib::Vector2D wheel_vel = diffdrive.IK_calculate(tw);
-    this->wheel_cmd.left_velocity = wheel_vel.x/this->max_wheel_vel*256;
-    this->wheel_cmd.right_velocity = wheel_vel.y/this->max_wheel_vel*256;
+
+    this->wheel_cmd.left_velocity = wheel_vel.x / this->motor_cmd_to_radsec;
+    this->wheel_cmd.right_velocity = wheel_vel.y / this->motor_cmd_to_radsec;
+
     if(this->wheel_cmd.left_velocity>256){
         this->wheel_cmd.left_velocity = 256;
     }
@@ -74,25 +76,8 @@ void Message_handle::velocity_callback(const geometry_msgs::Twist& msg){
 /// \brief subscribe to the /sensor_data and publish the /joint_states topic
 /// \param msg: the data sensor from other source(encoder, ...)
 void Message_handle::sensor_callback(const nuturtlebot_msgs::SensorData& msg){
-    
-    sensor_msgs::JointState joint_state;
-
-    joint_state.name.push_back("red/wheel_left_joint");
-    joint_state.name.push_back("red/wheel_right_joint");
-    joint_state.position.push_back(msg.left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
-    joint_state.position.push_back(msg.right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
-
-    joint_state.velocity.push_back((msg.left_encoder-this->last_left_encoder) * motor_cmd_to_radsec);
-    joint_state.velocity.push_back((msg.right_encoder - this->last_right_encoder) * motor_cmd_to_radsec);
-
-    joint_state.header.stamp = ros::Time(0);
-    joint_pub.publish(joint_state);
-
-    this->last_left_encoder = msg.left_encoder;
-    this->last_right_encoder = msg.right_encoder;
-
-    
-
+    this->left_encoder = msg.left_encoder;
+    this->right_encoder = msg.right_encoder;
 
 }
 int main(int argc, char ** argv){
@@ -104,8 +89,6 @@ int main(int argc, char ** argv){
     ros::param::get("/track_width",track);
 
     Message_handle msgh;
-    msgh.last_left_encoder = 0;
-    msgh.last_right_encoder = 0;
 
     msgh.diffdrive.set_param(radius,track);
     //calculate max_wheel_vel given the max_trans_velocity is 0.22m/s
@@ -129,12 +112,24 @@ int main(int argc, char ** argv){
     //subscribe to the sensor data
     msgh.sensor_sub = n.subscribe("sensor_data",1000,&Message_handle::sensor_callback,&msgh);
     //publish the joint states to provide the angle
-    msgh.joint_pub = n.advertise<sensor_msgs::JointState>("joint_states",1000);
+    msgh.joint_pub = n.advertise<sensor_msgs::JointState>("blue/joint_states",1000);
 
     double rate = 50;
     ros::Rate r(rate); // 50 hz by default
 
     while(ros::ok()){
+        sensor_msgs::JointState joint_state;
+        joint_state.name.push_back("blue/wheel_left_joint");
+        joint_state.name.push_back("blue/wheel_right_joint");
+        joint_state.position.push_back(msgh.left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+        joint_state.position.push_back(msgh.right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+
+        joint_state.velocity.push_back(msgh.diffdrive.wheel_vel().x);
+        joint_state.velocity.push_back(msgh.diffdrive.wheel_vel().y);   
+
+        joint_state.header.stamp = ros::Time::now();
+        msgh.joint_pub.publish(joint_state);
+
         ros::spinOnce();
         r.sleep();
     }

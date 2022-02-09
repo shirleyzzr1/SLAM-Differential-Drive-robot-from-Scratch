@@ -6,7 +6,7 @@ project(turtlelib)
 # A "target" is a name that CMake uses to refer to some type of output
 # In this case it is a library but it could also be an executable or some other items
 
-find_package(catkin REQUIRED COMPONENTS catch_ros roscpp)
+find_package(catkin REQUIRED COMPONENTS roscpp)
 
 
 catkin_package(
@@ -49,6 +49,8 @@ install(
 # add_executable(turtlelib_test tests/tests.cpp )
 # target_link_libraries(turtlelib_test turtlelib)
 # add_test(NAME Test_of_Turtlelib COMMAND turtlelib_test)
-
+if(CATKIN_ENABLE_TESTING)
+find_package(catkin REQUIRED COMPONENTS catch_ros)
 catch_add_test(my_test tests/testros.cpp)
 target_link_libraries(my_test	${catkin_LIBRARIES} ${PROJECT_NAME})
+endif()

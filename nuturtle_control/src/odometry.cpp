@@ -116,7 +116,7 @@ int main(int argc, char ** argv){
     n.param<std::string>("/odom_id", msgh.odom_id, "odom");
 
     //subscribe to the cmd_vel
-    ros::Subscriber joint_sub = n.subscribe("joint_states",1000, &Message_handle::joint_state_callback,&msgh);     
+    ros::Subscriber joint_sub = n.subscribe("blue/joint_states",1000, &Message_handle::joint_state_callback,&msgh);     
     msgh.odom_pub = n.advertise<nav_msgs::Odometry>("odom", 1000);
 
     msgh.set_pose = n.advertiseService("set_pose",&Message_handle::set_pose_callback,&msgh);

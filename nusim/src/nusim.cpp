@@ -26,6 +26,8 @@ public:
     nuturtlebot_msgs::SensorData sensor;
 
     double max_wheel_vel;
+    double motor_cmd_to_radsec;
+
     double last_left_encoder;
     double last_right_encoder;
     turtlelib::DiffDrive diffdrive;
@@ -189,7 +191,9 @@ void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
     // ROS_INFO("receive_wheel_callback");
     double motor_cmd_to_radsec;
     // ROS_WARN("%d,%d",msg.left_velocity,msg.right_velocity);
-    turtlelib::Vector2D wheel_vel{msg.left_velocity*this->max_wheel_vel/256,msg.right_velocity*this->max_wheel_vel/256};
+    // turtlelib::Vector2D wheel_vel{msg.left_velocity*this->max_wheel_vel/256,msg.right_velocity*this->max_wheel_vel/256};
+    turtlelib::Vector2D wheel_vel{(double)msg.left_velocity*this->motor_cmd_to_radsec,(double)msg.right_velocity*this->motor_cmd_to_radsec};
+
     // ROS_WARN("next line %f,%f",wheel_vel.x,wheel_vel.y);
     // ROS_INFO("receive_wheel_callback,%lf",wheel_vel.x);
 
@@ -202,7 +206,7 @@ int main(int argc, char ** argv){
     int rate,cylinder_num;
     double x0,y0,theta0;
     double radius,track;
-    double encoder_ticks_to_rad;
+    double encoder_ticks_to_rad,motor_cmd_to_radsec;
     //read all the parameters from launch file
     ros::param::get("~rate",rate);
     ros::param::get("~x0",x0);
@@ -211,6 +215,7 @@ int main(int argc, char ** argv){
     ros::param::get("/wheel_radius",radius);
     ros::param::get("/track_width",track);
     ros::param::get("/encoder_ticks_to_rad",encoder_ticks_to_rad);
+    ros::param::get("motor_cmd_to_radsec",motor_cmd_to_radsec);
 
     //set the private namespace to nodehanle
     ros::NodeHandle n("~");
@@ -255,6 +260,7 @@ int main(int argc, char ** argv){
     msgh.diffdrive.set_param(radius,track);
     msgh.last_left_encoder = 0;
     msgh.last_right_encoder = 0;
+    msgh.motor_cmd_to_radsec = motor_cmd_to_radsec;
     //calculate max_wheel_vel given the max_trans_velocity is 0.22m/s
     turtlelib::Twist2D max_trans = {0,0.22,0};
     msgh.diffdrive.IK_calculate(max_trans);
@@ -270,7 +276,7 @@ int main(int argc, char ** argv){
     while (ros::ok())
     {
         //broadcast the transformfrom world frame to robot frame
-        // transform(sx,sy,stheta);
+        transform(sx,sy,stheta);
         // ROS_INFO("in ros_main function,%lf",diffdrive.wheel_vel().x);
 
         turtlelib::Vector2D wheel =  {msgh.diffdrive.wheel_vel().x/rate,msgh.diffdrive.wheel_vel().y/rate};

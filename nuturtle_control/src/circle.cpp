@@ -13,7 +13,7 @@ bool stop_callback(std_srvs::Empty::Request &req,std_srvs::Empty::Response &res)
 {
     // process message.  Maybe messages of this type
     // mean its supposed to go into STOP mode
-    state = State::STOP;
+    state = State::INITIAL;
     return true;
 }
 
@@ -83,6 +83,7 @@ int main(int argc, char ** argv)
                 break;
             case State::REVERSE:
                 // do go state stuff
+                twist.linear.x = -twist.linear.x;
                 twist.angular.z = -twist.angular.z;
                 cmd_pub.publish(twist);
                 break;
