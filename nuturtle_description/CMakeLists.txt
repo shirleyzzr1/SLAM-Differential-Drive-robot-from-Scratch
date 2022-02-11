@@ -184,10 +184,10 @@ include_directories(
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-install(FILES
+install(PROGRAMS
   urdf/common_properties.xacro
   urdf/turtlebot3_burger.urdf.xacro
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/urdf
 )
 install(FILES
   config/diff_params.yaml

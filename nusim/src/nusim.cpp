@@ -1,5 +1,12 @@
 /// \file nusim.cpp
 /// \brief simulate the robot world by providing the sensor data
+/// PARAMSTERS:
+///     x0:(double):the start point of the robot in x axis
+///     y0(double): the start point of the robot in y axis
+///     theta0(double): the start ponit of the robot direction
+///     rate(double): the rate of the main loop
+///     x_length(double): the length of the wall in x axis
+///     y_length(double): the length of the wall in y axis
 /// SUBSCRIBERS:
 ///    wheel_cmd(nuturtlebot_msgs::WheelCommands): the velocity of the wheels
 /// PUBLISHERS:
@@ -26,6 +33,7 @@
 #include "nuturtlebot_msgs/WheelCommands.h"
 #include "nuturtlebot_msgs/SensorData.h"
 #include <ros/console.h>
+/// \brief pass parameters in different threads
 class Message_handle{
 public:
     ros::Publisher sensor_pub;

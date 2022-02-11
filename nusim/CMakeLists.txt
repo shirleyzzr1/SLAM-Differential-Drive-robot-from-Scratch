@@ -33,10 +33,16 @@ install(FILES
   config/basic_world.yaml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
 )
+
+
 include_directories(${catkin_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME} src/nusim.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencpp)
+
+install(TARGETS ${PROJECT_NAME}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 

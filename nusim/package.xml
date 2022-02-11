@@ -2,7 +2,7 @@
 <package format="2">
   <name>nusim</name>
   <version>0.0.1</version>
-  <description>This package provide a simulated robot environment, which visualize the 
+  <description>provide a simulated robot environment, which visualize the 
   cylinders at given start place and visulize a red turtle3-burger robot.</description>
   <maintainer email="zhuoruzhang2021@u.northwestern.edu">Zhuoru Zhang</maintainer>
   <license>BSD</license>
@@ -21,6 +21,8 @@
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>tf2</build_export_depend>
   <build_export_depend>tf2_ros</build_export_depend>
+  <build_export_depend>turtlelib</build_export_depend> 
+
   <!-- Use buildtool_depend for build tool packages: -->
   <buildtool_depend>catkin</buildtool_depend>
   <!-- Use exec_depend for packages you need at runtime: -->
