@@ -53,6 +53,8 @@ namespace turtlelib
     /// just to see what happens
     static_assert(almost_equal(0, 0), "is_zero failed");
 
+    // static_assert(!almost_equal(0, 0), "is_zero failed");
+
     static_assert(almost_equal(deg2rad(0.0), 0.0), "deg2rad failed");
 
     static_assert(almost_equal(rad2deg(0.0), 0.0), "rad2deg) failed");
