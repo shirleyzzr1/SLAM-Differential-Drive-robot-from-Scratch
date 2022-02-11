@@ -29,6 +29,10 @@ install(PROGRAMS
   urdf/turtlebot3_burger.urdf.xacro
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/urdf
 )
+install(FILES
+  config/basic_world.yaml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+)
 include_directories(${catkin_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME} src/nusim.cpp)

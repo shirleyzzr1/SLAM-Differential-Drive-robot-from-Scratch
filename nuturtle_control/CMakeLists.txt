@@ -8,7 +8,8 @@ set(DEFAULT_BUILD_TYPE "Debug")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros genmsg catch_ros rostest
+  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros std_msgs genmsg
+   catch_ros rostest
 )
 
 ## System dependencies are found with CMake's conventions
@@ -99,7 +100,9 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nuturtle_control
-  CATKIN_DEPENDS roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros genmsg
+  CATKIN_DEPENDS roscpp nuturtlebot_msgs turtlelib 
+  message_generation tf2 tf2_ros genmsg std_msgs
+  message_runtime
 #  DEPENDS system_lib
 )
 
@@ -159,16 +162,16 @@ include_directories(
 # )
 # Mark executable scripts (Python etc.) for installation
 # in contrast to setup.py, you can choose the destination
-catkin_install_python(PROGRAMS
-  loader.sh
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
+# catkin_install_python(PROGRAMS
+#   loader.sh
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
 
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# install(TARGETS odometry circle turtle_interface
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
 ## Mark libraries for installation
@@ -188,11 +191,17 @@ catkin_install_python(PROGRAMS
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
+  launch/basic_remote.launch
+  launch/start_robot.launch
+  launch/test.launch
+
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
+install(FILES
   loader.sh
-  # myfile2
+
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
 #############
 ## Testing ##
 #############
@@ -221,6 +230,11 @@ add_executable(circle src/circle.cpp)
 target_link_libraries(circle ${catkin_LIBRARIES})
 # add_dependencies(circle circle_gencpp)
 
+install(TARGETS odometry circle turtle_interface
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+
+if(CATKIN_ENABLE_TESTING)
 catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
 target_link_libraries(turtle_interface_test ${catkin_LIBRARIES})
 add_rostest(launch/turtle_interface.test)
@@ -232,6 +246,6 @@ add_rostest(launch/turtle_odom.test)
 
 add_rostest(launch/turtle_circle.test)
 
-
+endif()
 
 

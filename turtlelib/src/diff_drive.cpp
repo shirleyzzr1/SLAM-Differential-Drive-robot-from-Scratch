@@ -17,7 +17,6 @@ namespace turtlelib{
         /// write the transformation matrix
         Vector2D temp1{(double)-1/(2*this->track),(double)1/(2*this->track)};
         Vector2D temp2{(double)1/2,(double)1/2};
-
         // calulate the wheel_velocity, given the time unit is 1
         this->wheel_velocity = new_wheel_pos-this->wheel_position;
         // std::cout << "wheel_postion" << new_wheel_pos <<std::endl;
@@ -29,6 +28,28 @@ namespace turtlelib{
         this->body_twist.xdot = dot(this->radius*temp2,this->wheel_velocity);
         this->body_twist.ydot = 0;
         this->wheel_position = new_wheel_pos;
+
+        //update the body translation from the previsou configuration given the time is 1
+        Transform2D tf;
+        tf = integrate_twist(this->body_twist);
+        this->body_position *= tf;
+    }
+
+
+    void DiffDrive::FK_calculate_vel(Vector2D wheel_vel){
+        /// write the transformation matrix
+        Vector2D temp1{(double)-1/(2*this->track),(double)1/(2*this->track)};
+        Vector2D temp2{(double)1/2,(double)1/2};
+        // calulate the wheel_velocity, given the time unit is 1
+        this->wheel_velocity = wheel_vel;
+        // std::cout << "wheel_postion" << new_wheel_pos <<std::endl;
+        // std::cout << "this_wheel_position" << this->wheel_position;
+        // std::cout << "wheel_velocity" << this->wheel_velocity<< std::endl;
+
+        //calculate the body twist;
+        this->body_twist.thetadot = dot(this->radius*temp1,this->wheel_velocity);
+        this->body_twist.xdot = dot(this->radius*temp2,this->wheel_velocity);
+        this->body_twist.ydot = 0;
 
         //update the body translation from the previsou configuration given the time is 1
         Transform2D tf;

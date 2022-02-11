@@ -1,3 +1,11 @@
+/// \file odometry.cpp
+/// \brief subcribe to joint states message and transform between the odom frame 
+/// and the robot base_foorprint frame
+/// SUBSCRIBERS:
+///    blue/joint_states(sensor_msgs::sensor_msgs): the joint name, position and 
+///           velocity of the wheels of the robot
+/// PUBLISHERS:
+///    odom(nav_msgs::Odometry): the configuration of the robot in odom frame
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include <ros/console.h>
@@ -21,7 +29,7 @@ public:
     ros::ServiceServer set_pose;
 
     turtlelib::DiffDrive diffdrive;
-
+    double first_joint_flag;
     void transform();
     bool set_pose_callback(nusim::pose::Request &req,nusim::pose::Response &res);
     void joint_state_callback(const sensor_msgs::JointState& msg);
@@ -59,6 +67,12 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
     if(msg.velocity.size()==0) turtlelib::Vector2D wheel_vel{0,0};
     else{turtlelib::Vector2D wheel_vel{msg.velocity[0],msg.velocity[1]};}
     turtlelib::Vector2D wheel_pos{msg.position[0],msg.position[1]};
+    if(this->first_joint_flag){
+        turtlelib::Transform2D trans;
+        diffdrive.set_body_pos(trans);
+        diffdrive.set_wheel_pos(wheel_pos);
+        this->first_joint_flag = 0;
+    }
     this->diffdrive.FK_calculate(wheel_pos);
     
     geometry_msgs::Pose pos;
@@ -97,6 +111,7 @@ int main(int argc, char ** argv){
 
     Message_handle msgh;
     msgh.diffdrive.set_param(radius,track);
+    msgh.first_joint_flag = 1;
     ros::NodeHandle n;
     if (!n.getParam("/body_id", msgh.body_id))
     {

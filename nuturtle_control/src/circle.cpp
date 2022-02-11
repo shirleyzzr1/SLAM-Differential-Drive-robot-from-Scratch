@@ -1,3 +1,10 @@
+/// \file circle.cpp
+/// \brief control the robot to make it drive in circle
+/// SUBSCRIBERS:
+///    blue/joint_states(sensor_msgs::sensor_msgs): the joint name, position and 
+///           velocity of the wheels of the robot
+/// PUBLISHERS:
+///    odom(nav_msgs::Odometry): the configuration of the robot in odom frame
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "std_srvs/Empty.h"
@@ -22,6 +29,8 @@ bool reverse_callback(std_srvs::Empty::Request &req,std_srvs::Empty::Response &r
     // process message.  Maybe messages of this type
     // mean its supposed to go into REVERSE mode
     state = State::REVERSE;
+    twist.linear.x = -twist.linear.x;
+    twist.angular.z = -twist.angular.z;
     return true;
 
 }
@@ -83,8 +92,6 @@ int main(int argc, char ** argv)
                 break;
             case State::REVERSE:
                 // do go state stuff
-                twist.linear.x = -twist.linear.x;
-                twist.angular.z = -twist.angular.z;
                 cmd_pub.publish(twist);
                 break;
             case State::RUN:

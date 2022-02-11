@@ -1,3 +1,9 @@
+/// \file nusim.cpp
+/// \brief simulate the robot world by providing the sensor data
+/// SUBSCRIBERS:
+///    wheel_cmd(nuturtlebot_msgs::WheelCommands): the velocity of the wheels
+/// PUBLISHERS:
+///    sensor_data(nuturtlebot_msgs::SensorData): the sensor data like encoder
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include <cstdio>
@@ -24,14 +30,16 @@ class Message_handle{
 public:
     ros::Publisher sensor_pub;
     nuturtlebot_msgs::SensorData sensor;
-
-    double max_wheel_vel;
+    double rate;
     double motor_cmd_to_radsec;
 
     double last_left_encoder;
     double last_right_encoder;
     turtlelib::DiffDrive diffdrive;
+    turtlelib::DiffDrive reddiff;
+
     void wheel_callback(const nuturtlebot_msgs::WheelCommands& msg);
+    bool teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res);
 
 };
 /// \brief the x,y,theta of the robot configuration
@@ -54,19 +62,19 @@ bool reset_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response
 }
 /// \brief broadcast the transform from world frame to robot red/base_footprint frame
 /// x,y,theta input the pose of the robot relative to the world frame
-void transform(double x,double y,double theta){
+void transform(turtlelib::Transform2D trans){
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "red/base_footprint";
     //first set the translation
-    transformStamped.transform.translation.x = x;
-    transformStamped.transform.translation.y = y;
+    transformStamped.transform.translation.x = trans.translation().x;
+    transformStamped.transform.translation.y = trans.translation().y;
     transformStamped.transform.translation.z = 0.0;
     //set the rotation og the robot
     tf2::Quaternion q;
-    q.setRPY(0, 0, theta);
+    q.setRPY(0, 0, trans.rotation());
     transformStamped.transform.rotation.x = q.x();
     transformStamped.transform.rotation.y = q.y();
     transformStamped.transform.rotation.z = q.z();
@@ -106,6 +114,7 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
     marker.pose.position.x = pose[i][0];
     marker.pose.position.y = pose[i][1];
     marker.pose.position.z = 0;
+
     marker.pose.orientation.x = 0.0;
     marker.pose.orientation.y = 0.0;
     marker.pose.orientation.z = 0.0;
@@ -181,23 +190,40 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
 
 /// \brief this service sets the robot to move to a given place
 /// req input [x:"",y:"",theta:""]
-bool teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res){
-    sx = req.x;
-    sy = req.y;
-    stheta = req.theta;
+bool Message_handle::teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res){
+
+    this->reddiff.set_body_pos({{req.x,req.y},req.theta});
+
+    // sx = req.x;
+    // sy = req.y;
+    // stheta = req.theta;
     return true;
 }
 void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
     // ROS_INFO("receive_wheel_callback");
     double motor_cmd_to_radsec;
     // ROS_WARN("%d,%d",msg.left_velocity,msg.right_velocity);
-    // turtlelib::Vector2D wheel_vel{msg.left_velocity*this->max_wheel_vel/256,msg.right_velocity*this->max_wheel_vel/256};
-    turtlelib::Vector2D wheel_vel{(double)msg.left_velocity*this->motor_cmd_to_radsec,(double)msg.right_velocity*this->motor_cmd_to_radsec};
+    turtlelib::Vector2D wheel_vel{(double)msg.left_velocity*this->motor_cmd_to_radsec,\
+    (double)msg.right_velocity*this->motor_cmd_to_radsec};
 
-    // ROS_WARN("next line %f,%f",wheel_vel.x,wheel_vel.y);
-    // ROS_INFO("receive_wheel_callback,%lf",wheel_vel.x);
-
+    turtlelib::DiffDrive diff;
     this->diffdrive.set_wheel_vel(wheel_vel);
+    // this->diffdrive.FK_calculate(wheel_vel);
+
+    this->reddiff.FK_calculate_vel(wheel_vel*((double)1/rate));
+    
+    // sensor_msgs::JointState joint_state;
+    // joint_state.name.push_back("red/wheel_left_joint");
+    // joint_state.name.push_back("red/wheel_right_joint");
+    // joint_state.position.push_back(this->left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+    // joint_state.position.push_back(this->right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+
+    // joint_state.velocity.push_back(this->diffdrive.wheel_vel().x);
+    // joint_state.velocity.push_back(this->diffdrive.wheel_vel().y);   
+
+    // joint_state.header.stamp = ros::Time::now();
+    // this->joint_pub.publish(joint_state);
+
 
 }
 int main(int argc, char ** argv){
@@ -217,10 +243,11 @@ int main(int argc, char ** argv){
     ros::param::get("/encoder_ticks_to_rad",encoder_ticks_to_rad);
     ros::param::get("motor_cmd_to_radsec",motor_cmd_to_radsec);
 
+    Message_handle msgh;
+
     //set the private namespace to nodehanle
     ros::NodeHandle n("~");
     //set the service server ~/teleport and ~reset
-    ros::ServiceServer teleport = n.advertiseService("teleport",teleportCallback);
     ros::ServiceServer service = n.advertiseService("reset", reset_callback);
 
     //set the publiser ~/obstacles and ~timestep
@@ -229,12 +256,12 @@ int main(int argc, char ** argv){
     std_msgs::UInt64 msg_timestep;
     timestep = ros::Time::now().toSec();
     
-    //read the start point of the robot from param
-    std::vector<double> my_double_list;
-    ros::param::get("/robot_start",my_double_list);
-    sx = my_double_list[0];
-    sy = my_double_list[1];
-    stheta = my_double_list[2];
+    // //read the start point of the robot from param
+    // std::vector<double> my_double_list;
+    // ros::param::get("/robot_start",my_double_list);
+    // sx = my_double_list[0];
+    // sy = my_double_list[1];
+    // stheta = my_double_list[2];
 
     ros::Rate r(rate); // 50 hz by default
 
@@ -247,26 +274,19 @@ int main(int argc, char ** argv){
     //publish the markerarray
     vis_pub.publish( markerArray);
 
-    // //publish joint_states instead of using joint_state_publisher_gui
-    // ros::Publisher joint_pub = n.advertise<sensor_msgs::JointState>( "/joint_states",1);
-    // sensor_msgs::JointState jointstate;
-    // jointstate.name.push_back("red/wheel_left_joint");
-    // jointstate.name.push_back("red/wheel_right_joint");
-
-    // jointstate.position.push_back(0.0);
-    // jointstate.position.push_back(0.0);
-
-    Message_handle msgh;
     msgh.diffdrive.set_param(radius,track);
     msgh.last_left_encoder = 0;
     msgh.last_right_encoder = 0;
     msgh.motor_cmd_to_radsec = motor_cmd_to_radsec;
-    //calculate max_wheel_vel given the max_trans_velocity is 0.22m/s
-    turtlelib::Twist2D max_trans = {0,0.22,0};
-    msgh.diffdrive.IK_calculate(max_trans);
-    msgh.max_wheel_vel = abs(msgh.diffdrive.wheel_vel().x);
     //reset the diffdive wheel_velocity;
-    msgh.diffdrive.set_wheel_vel({0,0});
+    // msgh.diffdrive.set_wheel_vel({0,0});
+    msgh.reddiff.set_param(radius,track);
+    turtlelib::Vector2D initial_pos = {x0,y0};
+    turtlelib::Transform2D trans(initial_pos,theta0);
+    msgh.reddiff.set_body_pos(trans);
+    
+    msgh.rate = rate;
+    ros::ServiceServer teleport = n.advertiseService("teleport",&Message_handle::teleportCallback,&msgh);
 
     ros::Subscriber wheel_sub= n.subscribe("/wheel_cmd",1000,&Message_handle::wheel_callback,&msgh);
 
@@ -276,10 +296,10 @@ int main(int argc, char ** argv){
     while (ros::ok())
     {
         //broadcast the transformfrom world frame to robot frame
-        transform(sx,sy,stheta);
+        transform(msgh.reddiff.body_pos());
         // ROS_INFO("in ros_main function,%lf",diffdrive.wheel_vel().x);
 
-        turtlelib::Vector2D wheel =  {msgh.diffdrive.wheel_vel().x/rate,msgh.diffdrive.wheel_vel().y/rate};
+        turtlelib::Vector2D wheel =  {msgh.diffdrive.wheel_vel().x/msgh.rate,msgh.diffdrive.wheel_vel().y/msgh.rate};
         msgh.diffdrive.wheel_pos()+=wheel;
         //publish the message on 
         msgh.sensor.stamp = ros::Time::now();
@@ -288,9 +308,6 @@ int main(int argc, char ** argv){
         msgh.sensor.right_encoder =  msgh.diffdrive.wheel_pos().y / (2 * turtlelib::PI) * encoder_ticks_to_rad;
         msgh.sensor_pub.publish(msgh.sensor);
 
-        // publish joint states
-        // jointstate.header.stamp = ros::Time::now();
-        // joint_pub.publish(jointstate);
         msg_timestep.data = timestep;
         //publish the timestep
         timestep_pub.publish(msg_timestep);

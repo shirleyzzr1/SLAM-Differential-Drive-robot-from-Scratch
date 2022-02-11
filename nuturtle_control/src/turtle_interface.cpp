@@ -78,6 +78,17 @@ void Message_handle::velocity_callback(const geometry_msgs::Twist& msg){
 void Message_handle::sensor_callback(const nuturtlebot_msgs::SensorData& msg){
     this->left_encoder = msg.left_encoder;
     this->right_encoder = msg.right_encoder;
+    sensor_msgs::JointState joint_state;
+    joint_state.name.push_back("blue/wheel_left_joint");
+    joint_state.name.push_back("blue/wheel_right_joint");
+    joint_state.position.push_back(this->left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+    joint_state.position.push_back(this->right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+
+    joint_state.velocity.push_back(this->diffdrive.wheel_vel().x);
+    joint_state.velocity.push_back(this->diffdrive.wheel_vel().y);   
+
+    joint_state.header.stamp = ros::Time::now();
+    this->joint_pub.publish(joint_state);
 
 }
 int main(int argc, char ** argv){
@@ -118,17 +129,7 @@ int main(int argc, char ** argv){
     ros::Rate r(rate); // 50 hz by default
 
     while(ros::ok()){
-        sensor_msgs::JointState joint_state;
-        joint_state.name.push_back("blue/wheel_left_joint");
-        joint_state.name.push_back("blue/wheel_right_joint");
-        joint_state.position.push_back(msgh.left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
-        joint_state.position.push_back(msgh.right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
 
-        joint_state.velocity.push_back(msgh.diffdrive.wheel_vel().x);
-        joint_state.velocity.push_back(msgh.diffdrive.wheel_vel().y);   
-
-        joint_state.header.stamp = ros::Time::now();
-        msgh.joint_pub.publish(joint_state);
 
         ros::spinOnce();
         r.sleep();

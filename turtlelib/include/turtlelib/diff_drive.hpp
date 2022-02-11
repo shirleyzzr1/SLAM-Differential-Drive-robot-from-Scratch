@@ -29,6 +29,9 @@ namespace turtlelib{
         /// \param period: the period for the robot moving
         void FK_calculate(Vector2D new_wheel_pos);
 
+        void FK_calculate_vel(Vector2D wheel_vel);
+
+
         /// \brief use inverse kinematics to update the wheel
         /// velocity given the body twist
         /// \param twist the body twist
