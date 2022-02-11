@@ -6,6 +6,8 @@
 ///           velocity of the wheels of the robot
 /// PUBLISHERS:
 ///    odom(nav_msgs::Odometry): the configuration of the robot in odom frame
+/// SERVICES:
+///    set_pos(nusim::pose): set the position of the robot in odom frame
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include <ros/console.h>
@@ -58,6 +60,8 @@ void Message_handle::transform(){
     transformStamped.transform.rotation.w = q.w();
     br.sendTransform(transformStamped);
 }
+/// \brief subscribe to the joint states and publish the odometry message
+/// \param msg: the joint state pos, velocity and name
 void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
 
     nav_msgs::Odometry odom;
@@ -67,6 +71,7 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
     if(msg.velocity.size()==0) turtlelib::Vector2D wheel_vel{0,0};
     else{turtlelib::Vector2D wheel_vel{msg.velocity[0],msg.velocity[1]};}
     turtlelib::Vector2D wheel_pos{msg.position[0],msg.position[1]};
+    //avoid sudden change in pos at the very start
     if(this->first_joint_flag){
         turtlelib::Transform2D trans;
         diffdrive.set_body_pos(trans);
@@ -96,6 +101,9 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
     odom_pub.publish(odom);
 
 }
+/// \brief set the pose of the robot
+/// \param req:theta,x,y
+/// \param res:empty
 bool Message_handle::set_pose_callback(nusim::pose::Request &req,nusim::pose::Response &res){
     turtlelib::Vector2D pos = {req.x,req.y};
     diffdrive.set_body_pos(turtlelib::Transform2D(pos,req.theta));
@@ -113,6 +121,7 @@ int main(int argc, char ** argv){
     msgh.diffdrive.set_param(radius,track);
     msgh.first_joint_flag = 1;
     ros::NodeHandle n;
+    //if not getting the node, shutdown
     if (!n.getParam("/body_id", msgh.body_id))
     {
         ROS_INFO_STREAM("not initialize the body id"); 
@@ -132,8 +141,8 @@ int main(int argc, char ** argv){
 
     //subscribe to the cmd_vel
     ros::Subscriber joint_sub = n.subscribe("blue/joint_states",1000, &Message_handle::joint_state_callback,&msgh);     
+    //publish the odom
     msgh.odom_pub = n.advertise<nav_msgs::Odometry>("odom", 1000);
-
     msgh.set_pose = n.advertiseService("set_pose",&Message_handle::set_pose_callback,&msgh);
 
     ros::Rate r(50);

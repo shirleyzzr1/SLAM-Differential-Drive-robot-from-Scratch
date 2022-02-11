@@ -5,10 +5,16 @@
 ///           velocity of the wheels of the robot
 /// PUBLISHERS:
 ///    odom(nav_msgs::Odometry): the configuration of the robot in odom frame
+/// SERVICES:
+///     control(nuturtle_control::control): give the radius and angular velocity of the robot
+///     reverse(std_srvs::Empty): reverse the direction of the robot move
+///     stop(std_srvs::Empty): stop the robota
 #include "ros/ros.h"
 #include "geometry_msgs/Twist.h"
 #include "std_srvs/Empty.h"
 #include "nuturtle_control/control.h"
+#include "turtlelib/diff_drive.hpp"
+
 /// Static variables used by callbacks here
 
 enum class State {INITIAL,STOP, RUN, REVERSE};

@@ -1,8 +1,10 @@
 <launch>
+  <!--set which kind of robot localhost/nusim/turtlebot3_name-->
   <arg name = "robot" default="localhost" />
-  <!-- <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"  /> -->
+  <!--run node on another machine-->
   <machine name="turtlebot" address ="$(arg robot)" 
     env-loader="/home/msr/install/share/nuturtle_control/loader.sh" user="msr"/>
+  <!--load serial_node on turtlebot3-->
   <node name="serial_node" pkg="rosserial_python" type="serial_node.py" machine="turtlebot">
       <param name = "port" value = "/dev/ttyACM0" />
       <param name = "baud" value = "115200"  />

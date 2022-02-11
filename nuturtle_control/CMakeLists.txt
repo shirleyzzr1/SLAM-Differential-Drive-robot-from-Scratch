@@ -8,8 +8,8 @@ set(DEFAULT_BUILD_TYPE "Debug")
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp nuturtlebot_msgs turtlelib message_generation tf2 tf2_ros std_msgs genmsg
-   catch_ros rostest
+catch_ros genmsg message_generation nuturtlebot_msgs
+  roscpp rostest std_msgs tf2 tf2_ros turtlelib
 )
 
 ## System dependencies are found with CMake's conventions
@@ -100,9 +100,8 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES nuturtle_control
-  CATKIN_DEPENDS roscpp nuturtlebot_msgs turtlelib 
-  message_generation tf2 tf2_ros genmsg std_msgs
-  message_runtime
+  CATKIN_DEPENDS  genmsg message_generation   message_runtime
+  nuturtlebot_msgs roscpp std_msgs tf2 tf2_ros turtlelib
 #  DEPENDS system_lib
 )
 
@@ -188,8 +187,6 @@ include_directories(
 #   FILES_MATCHING PATTERN "*.h"
 #   PATTERN ".svn" EXCLUDE
 # )
-
-## Mark other files for installation (e.g. launch and bag files, etc.)
 install(FILES
   launch/basic_remote.launch
   launch/start_robot.launch
@@ -199,7 +196,6 @@ install(FILES
 )
 install(FILES
   loader.sh
-
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 #############
@@ -207,44 +203,37 @@ install(FILES
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_nuturtle_control.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
+# catkin_add_gtest(${PROJECT_NAmessage_runtime
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
-add_executable(turtle_interface src/turtle_interface.cpp)
-target_link_libraries(turtle_interface ${catkin_LIBRARIES})
-# add_dependencies(turtle_interface turtle_interface_gencpp)
-
-add_executable(odometry src/odometry.cpp)
-target_link_libraries(odometry ${catkin_LIBRARIES})
-# add_dependencies(odometry odometry_gencpp)
-
 
 add_executable(circle src/circle.cpp)
 target_link_libraries(circle ${catkin_LIBRARIES})
-# add_dependencies(circle circle_gencpp)
 
-install(TARGETS odometry circle turtle_interface
+add_executable(odometry src/odometry.cpp)
+target_link_libraries(odometry ${catkin_LIBRARIES})
+
+add_executable(turtle_interface src/turtle_interface.cpp)
+target_link_libraries(turtle_interface ${catkin_LIBRARIES})
+
+install(TARGETS circle odometry turtle_interface
   RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 if(CATKIN_ENABLE_TESTING)
-catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
-target_link_libraries(turtle_interface_test ${catkin_LIBRARIES})
-add_rostest(launch/turtle_interface.test)
+  catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
+  target_link_libraries(turtle_interface_test ${catkin_LIBRARIES})
+  add_rostest(launch/turtle_interface.test)
 
 
-catch_add_rostest_node(turtle_odom_test tests/turtle_odom_test.cpp)
-target_link_libraries(turtle_odom_test ${catkin_LIBRARIES})
-add_rostest(launch/turtle_odom.test)
+  catch_add_rostest_node(turtle_odom_test tests/turtle_odom_test.cpp)
+  target_link_libraries(turtle_odom_test ${catkin_LIBRARIES})
+  add_rostest(launch/turtle_odom.test)
 
-add_rostest(launch/turtle_circle.test)
+  add_rostest(launch/turtle_circle.test)
 
 endif()
 

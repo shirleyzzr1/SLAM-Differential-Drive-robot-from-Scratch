@@ -52,6 +52,7 @@ void Message_handle::velocity_callback(const geometry_msgs::Twist& msg){
 
     turtlelib::Vector2D wheel_vel = diffdrive.IK_calculate(tw);
 
+    //convert the velocity in rad to motor tick
     this->wheel_cmd.left_velocity = wheel_vel.x / this->motor_cmd_to_radsec;
     this->wheel_cmd.right_velocity = wheel_vel.y / this->motor_cmd_to_radsec;
 
@@ -81,6 +82,7 @@ void Message_handle::sensor_callback(const nuturtlebot_msgs::SensorData& msg){
     sensor_msgs::JointState joint_state;
     joint_state.name.push_back("blue/wheel_left_joint");
     joint_state.name.push_back("blue/wheel_right_joint");
+    //convert the encoder tick to wheel_position
     joint_state.position.push_back(this->left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
     joint_state.position.push_back(this->right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
 
