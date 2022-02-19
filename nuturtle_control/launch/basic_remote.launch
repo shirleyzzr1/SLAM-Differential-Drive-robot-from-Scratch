@@ -9,4 +9,6 @@
       <param name = "port" value = "/dev/ttyACM0" />
       <param name = "baud" value = "115200"  />
   </node>
+  <!--load hlds_laser_publisher to start the laser node-->
+  <node name = "hlds_laser_publisher" pkg= "hls_lfcd_lds_driver" type = "hlds_laser_publisher" machine = "turtlebot"/>
 </launch>

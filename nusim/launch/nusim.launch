@@ -1,40 +1,44 @@
 <launch>
-  <arg name="use_rviz" default ="true" />
+  <arg name="use_rviz" default ="false" />
   <arg name="use_jsp" default="false" />
   <arg name="robot_color" default="red" />
-  <arg name = "~x0" default="0"/>
-  <arg name = "~y0" default="0"/>
-  <arg name = "~theta0" default  = "0"/>
-  <arg name = "~rate" default = "50"/>
-  <arg name = "x_length" default = "2"/>
-  <arg name = "y_length" default = "2"/>
+  <arg name = "robot" default= "none"/>
+
+
+  <!--yaml file to config the simulator-->
+  <arg name = "config_file_world" default = "$(find nusim)/config/basic_world.yaml"/>
+  <arg name = "config_file_nusim" default = "$(find nuturtle_description)/config/diff_params.yaml"/>
   <group if="$(arg use_rviz)">
     <!-- rviz will enable us to see the robot -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" />
   </group>
   <!-- load yaml file into rosparam -->
-  <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
+  <rosparam command="load" file="$(arg config_file_world)" />
+  <rosparam command="load" file="$(arg config_file_nusim)" />
 
-    <!-- load the urdf file into the parameter server -->
-    <param name="robot_description" command="xacro '$(find nusim)/urdf/turtlebot3_burger.urdf.xacro' color:=red" />
-	
-    <!-- The robot_state_publisher reads the urdf from /robot_description parameter
-       and listens to joint information on the /joint_states topic -->
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-    <group if="$(arg use_jsp)">
-      <!-- The joint state publisher will be launched with a gui, read the urdf from /robot_description
-	  and publish the joint values on /joint_states --> 
-      <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
-    </group>
-    <!-- read nusim node and load the parameters inside launch-prefix ="gdb args"-->
-    <node pkg="nusim" type="nusim" name="nusim" output="screen" >
-    	<param name = "~x0" value = "$(arg ~x0)"/>
-    	<param name = "~y0" value = "$(arg ~y0)"/>
-    	<param name = "~theta0" value = "$(arg ~theta0)"/>
-      <param name = "~rate" value = "$(arg ~rate)"/>
-      <param name = "x_length" value = "$(arg x_length)"/>
-      <param name = "y_length" value = "$(arg y_length)" />
-    </node>
+  <!-- load the urdf file into the parameter server -->
+  <param name="robot_description" command="xacro '$(find nusim)/urdf/turtlebot3_burger.urdf.xacro' color:=red" />
+
+  <!-- The robot_state_publisher reads the urdf from /robot_description parameter
+      and listens to joint information on the /joint_states topic -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
+  <group if="$(arg use_jsp)">
+    <!-- The joint state publisher will be launched with a gui, read the urdf from /robot_description
+  and publish the joint values on /joint_states --> 
+    <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
+  </group>
+  <!-- read nusim node and load the parameters inside launch-prefix ="gdb args"-->
+  <node pkg="nusim" type="nusim" name="nusim" output="screen" if="$(eval arg('robot') == 'nusim')"> >
+    <!-- <param name = "~x0" value = "0"/>
+    <param name = "~y0" value = "0"/>
+    <param name = "~theta0" value = "0"/>
+    <param name = "~rate" value = "50"/>
+    <param name = "~wheel_mean" value = "0" />
+    <param name = "~wheel_stddev" value = "0.5" />
+    <param name = "~slip_min" value = "0.1" />
+    <param name = "~slip_max" value = "0.5" /> -->
+  </node>
   
  </launch>

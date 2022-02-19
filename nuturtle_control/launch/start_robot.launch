@@ -52,12 +52,12 @@
 
   <node name="nusim" pkg="nusim" type="nusim"  output="screen"
       if="$(eval arg('robot') == 'nusim')">
-    	<param name = "x0" value = "$(arg ~x0)"/>
+    	<!-- <param name = "x0" value = "$(arg ~x0)"/>
     	<param name = "y0" value = "$(arg ~y0)"/>
     	<param name = "theta0" value = "$(arg ~theta0)"/>
       <param name = "rate" value = "$(arg ~rate)"/>
       <param name = "x_length" value = "$(arg x_length)"/>
-      <param name = "y_length" value = "$(arg y_length)" />
+      <param name = "y_length" value = "$(arg y_length)" /> -->
   </node>
   <!--group of blue robot-->
   <group ns = "blue">

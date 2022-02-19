@@ -33,10 +33,14 @@
 #include "nuturtlebot_msgs/WheelCommands.h"
 #include "nuturtlebot_msgs/SensorData.h"
 #include <ros/console.h>
+#include <sensor_msgs/LaserScan.h>
+#include <random>
+#include <iostream>
 /// \brief pass parameters in different threads
 class Message_handle{
 public:
     ros::Publisher sensor_pub;
+    ros::Publisher laser_pub;
     nuturtlebot_msgs::SensorData sensor;
     double rate;
     double motor_cmd_to_radsec;
@@ -46,10 +50,35 @@ public:
     turtlelib::DiffDrive diffdrive;
     turtlelib::DiffDrive reddiff;
 
+    double wheel_mean;
+    double wheel_stddev;
+    double slip_min;
+    double slip_max;
+    //lidar parameter
+    double angle_min;
+    double angle_max;
+    double samples;
+    double range_min;
+    double range_max;
+    double resolution;
+    double noise_std;
+    // random device class instance, source of 'true' 
+
+    //mean,stddev
     void wheel_callback(const nuturtlebot_msgs::WheelCommands& msg);
     bool teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res);
-
+    void publish_sensors(const ros::TimerEvent& event);
 };
+std::mt19937& random_seed(){
+    //randomness for initializing random seed
+    static std::random_device rd{}; 
+
+    // Mersenne twister PRNG, initialized with seed 
+    //from previous random device instance
+    static std::mt19937 gen{rd()}; 
+    return gen;
+}
+
 /// \brief the x,y,theta of the robot configuration
 static double sx,sy,stheta;
 // turtlelib::DiffDrive diffdrive;
@@ -142,8 +171,9 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
     }
     double x_length,y_length;
 
-    ros::param::get("~x_length", x_length);
-    ros::param::get("~y_length", y_length);
+    //generate the wall
+    ros::param::get("x_length", x_length);
+    ros::param::get("y_length", y_length);
     std::vector<std::vector<double>> poses;
     std::vector<std::vector<double>> scales;
     std::vector<double> pose1 = {0,y_length/2};
@@ -201,37 +231,42 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
 bool Message_handle::teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res){
 
     this->reddiff.set_body_pos({{req.x,req.y},req.theta});
-
-    // sx = req.x;
-    // sy = req.y;
-    // stheta = req.theta;
     return true;
 }
 void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
     // ROS_INFO("receive_wheel_callback");
-    double motor_cmd_to_radsec;
     // ROS_WARN("%d,%d",msg.left_velocity,msg.right_velocity);
     turtlelib::Vector2D wheel_vel{(double)msg.left_velocity*this->motor_cmd_to_radsec,\
     (double)msg.right_velocity*this->motor_cmd_to_radsec};
+    double sample;
+    //add gaussian noise to the angular velocity,no noise if angular velocities are zero
+    std::normal_distribution<> guassian{wheel_mean,wheel_stddev};
+
+    if(abs(wheel_vel.x) >= 0.1 ||  abs(wheel_vel.y) >= 0.1){
+        // instance of class std::normal_distribution with specific mean and stddev
+        sample = guassian(random_seed());
+        wheel_vel.x += sample;
+        wheel_vel.y += sample;
+    }
 
     turtlelib::DiffDrive diff;
     this->diffdrive.set_wheel_vel(wheel_vel);
     // this->diffdrive.FK_calculate(wheel_vel);
-
     this->reddiff.FK_calculate_vel(wheel_vel*((double)1/rate));
     
-    // sensor_msgs::JointState joint_state;
-    // joint_state.name.push_back("red/wheel_left_joint");
-    // joint_state.name.push_back("red/wheel_right_joint");
-    // joint_state.position.push_back(this->left_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
-    // joint_state.position.push_back(this->right_encoder* 2 * turtlelib::PI/encoder_ticks_to_rad);
+}
+void Message_handle::publish_sensors(const ros::TimerEvent& event){
+    //publish fake sensor
 
-    // joint_state.velocity.push_back(this->diffdrive.wheel_vel().x);
-    // joint_state.velocity.push_back(this->diffdrive.wheel_vel().y);   
-
-    // joint_state.header.stamp = ros::Time::now();
-    // this->joint_pub.publish(joint_state);
-
+    //publish laser data
+    sensor_msgs::LaserScan scan;
+    scan.angle_min = this->angle_min;
+    scan.angle_max = this->angle_max;
+    scan.angle_increment = (this->angle_max-this->angle_min)/this->samples;
+    scan.time_increment = 0.2/this->samples;
+    scan.range_min = this->range_min;
+    scan.range_max = this->range_max;
+    // laser_pub.publihs(scan);
 
 }
 int main(int argc, char ** argv){
@@ -241,15 +276,31 @@ int main(int argc, char ** argv){
     double x0,y0,theta0;
     double radius,track;
     double encoder_ticks_to_rad,motor_cmd_to_radsec;
+    double wheel_mean,wheel_stddev;
+    double range_min,range_max,resolution,angle_min,angle_max,samples,noise_std;
+    double slip_min,slip_max;
     //read all the parameters from launch file
-    ros::param::get("~rate",rate);
-    ros::param::get("~x0",x0);
-    ros::param::get("~y0",y0);
-    ros::param::get("~theta0",theta0);
+    ros::param::get("/rate",rate);
+    ros::param::get("/x0",x0);
+    ros::param::get("/y0",y0);
+    ros::param::get("/theta0",theta0);
     ros::param::get("/wheel_radius",radius);
     ros::param::get("/track_width",track);
     ros::param::get("/encoder_ticks_to_rad",encoder_ticks_to_rad);
-    ros::param::get("motor_cmd_to_radsec",motor_cmd_to_radsec);
+    ros::param::get("/motor_cmd_to_radsec",motor_cmd_to_radsec);
+    ros::param::get("/wheel_mean",wheel_mean);
+    ros::param::get("/wheel_stddev",wheel_stddev);
+    //slip parameters
+    ros::param::get("/slip_min",slip_min);
+    ros::param::get("/slip_max",slip_max);
+    //lidar parameters
+    ros::param::get("/range_min",range_min);
+    ros::param::get("/range_max",range_max);
+    ros::param::get("/resolution",resolution);
+    ros::param::get("/angle_min",angle_min);
+    ros::param::get("/angle_max",angle_max);
+    ros::param::get("/samples",samples);
+    ros::param::get("/noise_std",noise_std);
 
     Message_handle msgh;
 
@@ -263,13 +314,6 @@ int main(int argc, char ** argv){
     ros::Publisher timestep_pub = n.advertise<std_msgs::UInt64>( "timestep", 0);
     std_msgs::UInt64 msg_timestep;
     timestep = ros::Time::now().toSec();
-    
-    // //read the start point of the robot from param
-    // std::vector<double> my_double_list;
-    // ros::param::get("/robot_start",my_double_list);
-    // sx = my_double_list[0];
-    // sy = my_double_list[1];
-    // stheta = my_double_list[2];
 
     ros::Rate r(rate); // 50 hz by default
 
@@ -299,7 +343,25 @@ int main(int argc, char ** argv){
     ros::Subscriber wheel_sub= n.subscribe("/wheel_cmd",1000,&Message_handle::wheel_callback,&msgh);
 
     msgh.sensor_pub = n.advertise<nuturtlebot_msgs::SensorData>("/sensor_data", 1000);
+    msgh.laser_pub = n.advertise<sensor_msgs::LaserScan>("sensor_msgs/LaserScan", 1000);
 
+    msgh.wheel_mean = wheel_mean;
+    msgh.wheel_stddev = wheel_stddev;
+    msgh.slip_min = slip_min;
+    msgh.slip_max = slip_max;
+
+    msgh.range_min = range_min;
+    msgh.range_max = range_max;
+    msgh.resolution = resolution;
+    msgh.angle_min = angle_min;
+    msgh.angle_max = angle_max;
+    msgh.samples = samples;
+    msgh.noise_std = noise_std;
+
+    //the timer to publish the sensor and laser data every 0.2 seconds
+    ros::Timer timer_sensors = n.createTimer(ros::Duration(0.2), &Message_handle::publish_sensors,&msgh);
+
+    std::uniform_real_distribution<double> uniform{msgh.slip_min, msgh.slip_max};
 
     while (ros::ok())
     {
@@ -308,7 +370,13 @@ int main(int argc, char ** argv){
         // ROS_INFO("in ros_main function,%lf",diffdrive.wheel_vel().x);
 
         turtlelib::Vector2D wheel =  {msgh.diffdrive.wheel_vel().x/msgh.rate,msgh.diffdrive.wheel_vel().y/msgh.rate};
+        //add slip to the wheel
+        double eta;
+        eta = uniform(random_seed());
+
+        wheel += wheel*(eta/10);
         msgh.diffdrive.wheel_pos()+=wheel;
+
         //publish the message on 
         msgh.sensor.stamp = ros::Time::now();
         // ROS_WARN("x: %f, y: %f"diffdrive.wheel_pos().x,diffdrive.wheel_pos().y);

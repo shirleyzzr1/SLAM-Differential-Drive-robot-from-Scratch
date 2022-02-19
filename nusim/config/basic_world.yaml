@@ -1,5 +1,17 @@
-%this is the yaml file for nusim basic_world configuration
+#this is the yaml file for nusim basic_world configuration
 ---
 robot_start: [-0.6,0.8,1.57]
 radius: 0.038
 cylinders_start: [[-0.6,-0.8],[0.6,-0.8],[0.6,0.8]]
+#the length of the walls
+x_length: 2
+y_length: 2
+#nusim_config(for debug only)
+x0: 0
+y0: 0
+theta0: 0
+rate: 50
+wheel_mean: 0
+wheel_stddev: 0.5
+slip_min: 0
+slip_max: 1
