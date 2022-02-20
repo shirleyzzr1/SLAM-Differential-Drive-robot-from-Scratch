@@ -7,14 +7,12 @@
   <arg name = "frequency" default = "50" />
   <arg name = "odom_id" default = "odom" />
   <arg name = "use_jsp" default = 'false' />
-  <arg name = "x_length" default = "3"/>
+  <!-- <arg name = "x_length" default = "3"/>
   <arg name = "y_length" default = "3"/>
-  <!--the start point of red_robot [x0,y0,theta0]-->
   <arg name = "~x0" default="1"/>
   <arg name = "~y0" default="0"/>
   <arg name = "~theta0" default  = "0"/>
-  <!--set the rate of the nusim node-->
-  <arg name = "~rate" default = "50"/>
+  <arg name = "~rate" default = "50"/> -->
 
   <!--the transform odom_id and body_id in odometry-->
   <param name = "odom_id" value = "$(arg odom_id)"/>

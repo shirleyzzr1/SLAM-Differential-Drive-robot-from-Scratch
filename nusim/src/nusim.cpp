@@ -36,10 +36,14 @@
 #include <sensor_msgs/LaserScan.h>
 #include <random>
 #include <iostream>
+#include <math.h>       /* atan */
+
 /// \brief pass parameters in different threads
 class Message_handle{
 public:
     ros::Publisher sensor_pub;
+    ros::Publisher fake_sensor_pub;
+
     ros::Publisher laser_pub;
     nuturtlebot_msgs::SensorData sensor;
     double rate;
@@ -50,6 +54,10 @@ public:
     turtlelib::DiffDrive diffdrive;
     turtlelib::DiffDrive reddiff;
 
+    std::vector<double> cylinders_start_x;
+    std::vector<double> cylinders_start_y;
+    
+    double cylinder_radius;
     double wheel_mean;
     double wheel_stddev;
     double slip_min;
@@ -62,12 +70,17 @@ public:
     double range_max;
     double resolution;
     double noise_std;
-    // random device class instance, source of 'true' 
+    double basic_sensor_variance;
 
     //mean,stddev
     void wheel_callback(const nuturtlebot_msgs::WheelCommands& msg);
     bool teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res);
     void publish_sensors(const ros::TimerEvent& event);
+
+    void drawmarker(visualization_msgs::MarkerArray &markerArray);
+    void transform(turtlelib::Transform2D trans);
+
+
 };
 std::mt19937& random_seed(){
     //randomness for initializing random seed
@@ -99,15 +112,37 @@ bool reset_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response
 }
 /// \brief broadcast the transform from world frame to robot red/base_footprint frame
 /// x,y,theta input the pose of the robot relative to the world frame
-void transform(turtlelib::Transform2D trans){
+void Message_handle::transform(turtlelib::Transform2D trans){
+    //check for collision after each update
+    double collision_radius;
+    double theta,dis;
+    ros::param::get("/collision_radius",collision_radius);
+    turtlelib::Vector2D move = {0,0};
+    //if intersect with other cylinder, move towards the tangent line
+    for(int i=0;i<cylinders_start_x.size();i++){
+        dis = sqrt(pow(trans.translation().x-cylinders_start_x[i],2)+pow(trans.translation().y-cylinders_start_y[i],2));
+        if (dis>=(collision_radius+cylinder_radius))continue;
+        // ROS_INFO("collision happened");
+        double move_dis = collision_radius+cylinder_radius-dis;
+        theta = atan2(trans.translation().y-cylinders_start_y[i],trans.translation().x-cylinders_start_x[i]);
+        move = {move_dis*cos(theta),move_dis*sin(theta)};
+        //move the wheel
+        turtlelib::Twist2D twist = {0,move.x,move.y};
+        this->diffdrive.IK_calculate(twist);
+        this->diffdrive.set_wheel_pos(this->diffdrive.wheel_pos()+this->diffdrive.wheel_vel()*((double)1/rate));
+
+        this->reddiff.IK_calculate(twist);
+        this->reddiff.FK_calculate_vel(this->reddiff.wheel_vel()*((double)1/rate));
+        break;
+    }
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "red/base_footprint";
     //first set the translation
-    transformStamped.transform.translation.x = trans.translation().x;
-    transformStamped.transform.translation.y = trans.translation().y;
+    transformStamped.transform.translation.x = this->reddiff.body_pos().translation().x;
+    transformStamped.transform.translation.y = this->reddiff.body_pos().translation().y;
     transformStamped.transform.translation.z = 0.0;
     //set the rotation og the robot
     tf2::Quaternion q;
@@ -120,27 +155,12 @@ void transform(turtlelib::Transform2D trans){
 }
 /// \brief draw sets of cylinders with given start point and radius
 /// markerArray input the holder of the definition of markers
-void drawmarker(visualization_msgs::MarkerArray &markerArray){
+void Message_handle::drawmarker(visualization_msgs::MarkerArray &markerArray){
     //make sure that every marker has unique id;
     int id = 0;
-    //the radus of the cylinders
-    double radius;
-    std::vector<std::vector<double>> pose;
-    ros::param::get("/radius",radius);
 
-    //using xmlrpc library to parse the 2-d vector
-    XmlRpc::XmlRpcValue cylinders_start;
-    ros::param::get("/cylinders_start", cylinders_start);
-    //resize the cylinder vector and parse the value from param to pose
-    pose.resize(cylinders_start.size());
-    for(int i = 0; i < cylinders_start.size(); ++i)
-    {
-        for(int j = 0; j < cylinders_start[i].size(); ++j)
-        {
-        if(XmlRpc::XmlRpcValue::TypeDouble == cylinders_start[i][j].getType())
-            pose[i].push_back(static_cast<double>(cylinders_start[i][j]));}
-    }
-    for(unsigned int i=0;i<pose.size();i++){
+    for(unsigned int i=0;i<this->cylinders_start_x.size();i++){
+    //the read marker pose
     visualization_msgs::Marker marker;
     marker.header.frame_id = "world";
     marker.header.stamp = ros::Time();
@@ -148,8 +168,8 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
     marker.type = visualization_msgs::Marker::CYLINDER;
     marker.action = visualization_msgs::Marker::ADD;
     //set the different poses
-    marker.pose.position.x = pose[i][0];
-    marker.pose.position.y = pose[i][1];
+    marker.pose.position.x = this->cylinders_start_x[i];
+    marker.pose.position.y = this->cylinders_start_y[i];
     marker.pose.position.z = 0;
 
     marker.pose.orientation.x = 0.0;
@@ -157,8 +177,8 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
     //set the scale of different directions
-    marker.scale.x = radius;
-    marker.scale.y = radius;
+    marker.scale.x = this->cylinder_radius;
+    marker.scale.y = this->cylinder_radius;
     marker.scale.z = 0.25;
     //set the colors of the object
     marker.color.a = 1.0; // Don't forget to set the alpha!
@@ -169,9 +189,9 @@ void drawmarker(visualization_msgs::MarkerArray &markerArray){
     markerArray.markers.push_back(marker);
     id++;
     }
-    double x_length,y_length;
 
     //generate the wall
+    double x_length,y_length;
     ros::param::get("x_length", x_length);
     ros::param::get("y_length", y_length);
     std::vector<std::vector<double>> poses;
@@ -255,9 +275,48 @@ void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
     this->reddiff.FK_calculate_vel(wheel_vel*((double)1/rate));
     
 }
+// void calculate_distance(turtlelib::Vector2D body_pos, turtlelib::Vector2D obstacle_pos){
+//     return sqrt(pow(body_pos.x-obstacle_pos.x,2)+pow(body_pos.y-obstacle_pos.y,2));
+// }
 void Message_handle::publish_sensors(const ros::TimerEvent& event){
     //publish fake sensor
+        //msgh.reddiff.body_pos();
+    turtlelib::Transform2D Twr = this->reddiff.body_pos();
+    turtlelib::Transform2D Tro;
+    visualization_msgs::MarkerArray markerArray;
+    std::normal_distribution<> gaussian{0,this->basic_sensor_variance};
+    double max_range;
+    ros::param::get("/max_range",max_range);
 
+    for(unsigned int i=0;i<cylinders_start_x.size();i++){
+        turtlelib::Vector2D trans={this->cylinders_start_x[i],this->cylinders_start_y[i]};
+        turtlelib::Transform2D Two = turtlelib::Transform2D(trans);
+        Tro = (Twr.inv())*Two;
+        visualization_msgs::Marker marker;
+        marker.header.frame_id = "red/base_footprint";
+        marker.header.stamp = ros::Time();
+        marker.id = i;
+        marker.type = visualization_msgs::Marker::CUBE;
+        if (Tro.rotation()>max_range) marker.action = visualization_msgs::Marker::DELETE;
+        else marker.action = visualization_msgs::Marker::ADD;
+        //set the different poses
+        marker.pose.position.x = Tro.translation().x+gaussian(random_seed());
+        marker.pose.position.y = Tro.translation().y+gaussian(random_seed());
+        marker.pose.position.z = 0;
+        marker.pose.orientation.w = 1.0;
+        //set the scale of different directions
+        marker.scale.x = this->cylinder_radius;
+        marker.scale.y = this->cylinder_radius;
+        marker.scale.z = 0.25;
+        //set the colors of the object
+        marker.color.a = 1.0; // Don't forget to set the alpha!
+        marker.color.r = 1.0;
+        marker.color.g = 1.0;
+        marker.color.b = 0.0;
+        //add the marker to the array
+        markerArray.markers.push_back(marker);
+    }
+    fake_sensor_pub.publish(markerArray);
     //publish laser data
     sensor_msgs::LaserScan scan;
     scan.angle_min = this->angle_min;
@@ -273,13 +332,20 @@ int main(int argc, char ** argv){
     //init the node
     ros::init(argc, argv, "nusim");
     int rate,cylinder_num;
+    std::vector<double> cylinders_start_x,cylinders_start_y;
+    double cylinder_radius;
     double x0,y0,theta0;
     double radius,track;
     double encoder_ticks_to_rad,motor_cmd_to_radsec;
     double wheel_mean,wheel_stddev;
     double range_min,range_max,resolution,angle_min,angle_max,samples,noise_std;
     double slip_min,slip_max;
+    double basic_sensor_variance;
     //read all the parameters from launch file
+    ros::param::get("/cylinders_start_x",cylinders_start_x);
+    ros::param::get("/cylinders_start_y",cylinders_start_y);
+    ros::param::get("/cylinder_radius",cylinder_radius);
+
     ros::param::get("/rate",rate);
     ros::param::get("/x0",x0);
     ros::param::get("/y0",y0);
@@ -302,6 +368,7 @@ int main(int argc, char ** argv){
     ros::param::get("/samples",samples);
     ros::param::get("/noise_std",noise_std);
 
+    ros::param::get("/basic_sensor_variance",basic_sensor_variance);
     Message_handle msgh;
 
     //set the private namespace to nodehanle
@@ -310,7 +377,7 @@ int main(int argc, char ** argv){
     ros::ServiceServer service = n.advertiseService("reset", reset_callback);
 
     //set the publiser ~/obstacles and ~timestep
-    ros::Publisher vis_pub = n.advertise<visualization_msgs::MarkerArray>( "obstacles/", 0 ,true);
+    ros::Publisher vis_pub = n.advertise<visualization_msgs::MarkerArray>( "obstacles", 0 ,true);
     ros::Publisher timestep_pub = n.advertise<std_msgs::UInt64>( "timestep", 0);
     std_msgs::UInt64 msg_timestep;
     timestep = ros::Time::now().toSec();
@@ -319,12 +386,14 @@ int main(int argc, char ** argv){
 
     //define the markerarray here
     visualization_msgs::MarkerArray markerArray;
-
+    msgh.cylinders_start_x = cylinders_start_x;
+    msgh.cylinders_start_y = cylinders_start_y;
+    msgh.cylinder_radius = cylinder_radius;
     //fill all the markers 
-    drawmarker(markerArray);
+    msgh.drawmarker(markerArray);
 
     //publish the markerarray
-    vis_pub.publish( markerArray);
+    vis_pub.publish(markerArray);
 
     msgh.diffdrive.set_param(radius,track);
     msgh.last_left_encoder = 0;
@@ -342,7 +411,10 @@ int main(int argc, char ** argv){
 
     ros::Subscriber wheel_sub= n.subscribe("/wheel_cmd",1000,&Message_handle::wheel_callback,&msgh);
 
+
     msgh.sensor_pub = n.advertise<nuturtlebot_msgs::SensorData>("/sensor_data", 1000);
+    msgh.fake_sensor_pub = n.advertise<visualization_msgs::MarkerArray>( "/fake_sensor", 0);
+
     msgh.laser_pub = n.advertise<sensor_msgs::LaserScan>("sensor_msgs/LaserScan", 1000);
 
     msgh.wheel_mean = wheel_mean;
@@ -357,6 +429,7 @@ int main(int argc, char ** argv){
     msgh.angle_max = angle_max;
     msgh.samples = samples;
     msgh.noise_std = noise_std;
+    msgh.basic_sensor_variance = basic_sensor_variance;
 
     //the timer to publish the sensor and laser data every 0.2 seconds
     ros::Timer timer_sensors = n.createTimer(ros::Duration(0.2), &Message_handle::publish_sensors,&msgh);
@@ -366,7 +439,7 @@ int main(int argc, char ** argv){
     while (ros::ok())
     {
         //broadcast the transformfrom world frame to robot frame
-        transform(msgh.reddiff.body_pos());
+        msgh.transform(msgh.reddiff.body_pos());
         // ROS_INFO("in ros_main function,%lf",diffdrive.wheel_vel().x);
 
         turtlelib::Vector2D wheel =  {msgh.diffdrive.wheel_vel().x/msgh.rate,msgh.diffdrive.wheel_vel().y/msgh.rate};

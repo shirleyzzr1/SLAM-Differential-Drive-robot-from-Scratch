@@ -10,6 +10,7 @@ Panels:
         - /RobotModel1
         - /TF1
         - /TF1/Frames1
+        - /MarkerArray2
       Splitter Ratio: 0.5
     Tree Height: 551
   - Class: rviz/Selection
@@ -128,6 +129,14 @@ Visualization Manager:
         {}
       Update Interval: 0
       Value: false
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /fake_sensor
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -193,4 +202,4 @@ Window Geometry:
     collapsed: false
   Width: 1386
   X: 72
-  Y: 321
+  Y: 284
