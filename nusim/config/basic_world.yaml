@@ -2,15 +2,17 @@
 ---
 robot_start: [-0.6,0.8,1.57]
 cylinder_radius: 0.3
-cylinders_start_x: [-0.6,0.6,0.6]
-cylinders_start_y: [-0.8,-0.8,0.8]
+# cylinders_start_x: [-0.6,0.6,0.6]
+# cylinders_start_y: [-0.8,-0.8,0.8]
+cylinders_start_x: [-0.6,0.6]
+cylinders_start_y: [-0.8,-0.8]
 #the length of the walls
 x_length: 2
 y_length: 2
 #nusim_config(for debug only)
-x0: -0.6
-y0: -0.8
-theta0: 0
+x0: 0
+y0: -0.6
+theta0: 0.785
 rate: 50
 wheel_mean: 0
 wheel_stddev: 0.5

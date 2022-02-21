@@ -80,6 +80,9 @@ public:
     void drawmarker(visualization_msgs::MarkerArray &markerArray);
     void transform(turtlelib::Transform2D trans);
 
+    double calculate_nearest_point(turtlelib::Vector2D robot_pos,turtlelib::Vector2D lidar_end);
+
+
 
 };
 std::mt19937& random_seed(){
@@ -127,12 +130,12 @@ void Message_handle::transform(turtlelib::Transform2D trans){
         theta = atan2(trans.translation().y-cylinders_start_y[i],trans.translation().x-cylinders_start_x[i]);
         move = {move_dis*cos(theta),move_dis*sin(theta)};
         //move the wheel
-        turtlelib::Twist2D twist = {0,move.x,move.y};
-        this->diffdrive.IK_calculate(twist);
-        this->diffdrive.set_wheel_pos(this->diffdrive.wheel_pos()+this->diffdrive.wheel_vel()*((double)1/rate));
+        // turtlelib::Twist2D twist = {0,move.x,move.y};
+        // this->diffdrive.IK_calculate(twist);
+        // this->diffdrive.set_wheel_pos(this->diffdrive.wheel_pos()+this->diffdrive.wheel_vel()*((double)1/rate));
 
-        this->reddiff.IK_calculate(twist);
-        this->reddiff.FK_calculate_vel(this->reddiff.wheel_vel()*((double)1/rate));
+        // this->reddiff.IK_calculate(twist);
+        // this->reddiff.FK_calculate_vel(this->reddiff.wheel_vel()*((double)1/rate));
         break;
     }
     static tf2_ros::TransformBroadcaster br;
@@ -278,10 +281,55 @@ void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
 // void calculate_distance(turtlelib::Vector2D body_pos, turtlelib::Vector2D obstacle_pos){
 //     return sqrt(pow(body_pos.x-obstacle_pos.x,2)+pow(body_pos.y-obstacle_pos.y,2));
 // }
+double Message_handle::calculate_nearest_point(turtlelib::Vector2D robot_pos,turtlelib::Vector2D lidar_end){
+    double x1,x2,y1,y2;
+    double radius = this->cylinder_radius;
+    double dy_sign = 1;
+    double dis_min =  this->range_max;
+    for(int i=0;i<this->cylinders_start_x.size();i++){
+        //first move the circle to the (0,0),move the x,y accordingly
+        x1 = robot_pos.x-this->cylinders_start_x[i];
+        y1 = robot_pos.y-this->cylinders_start_y[i];
+        x2 = lidar_end.x-this->cylinders_start_x[i];
+        y2 = lidar_end.y-this->cylinders_start_y[i];
+        double dx = x2 - x1;
+        double dy = y2 - y1;
+        double dr = sqrt(dx*dx+dy*dy);
+        double D = x1 * y2 - x2 * y1;
+        double dy_sign = 1;
+
+        if(dy<0)dy_sign=-1;
+        double delta = radius*radius*dr*dr - D*D;
+        if(delta>0){
+            double intersect_x1 = (D*dy+dy_sign*dx*sqrt(delta))/(dr*dr);
+            double intersect_y1 = (-D*dx+abs(dy)*sqrt(delta))/(dr*dr);
+
+            double intersect_x2 = (D*dy-dy_sign*dx*sqrt(delta))/(dr*dr);
+            double intersect_y2 = (-D*dx-abs(dy)*sqrt(delta))/(dr*dr);
+            //check if the intersect is within the range of the line segment
+            if((intersect_x1<std::min(x1,x2)|| (intersect_x1 >std::max(x1,x2)) || 
+            intersect_x2<std::min(x1,x2)|| intersect_x2 >std::max(x1,x2) ||
+            intersect_y1<std::min(y1,y2)|| intersect_y1 >std::max(y1,y2) ) ||
+            intersect_y2<std::min(y1,y2)|| intersect_y2 >std::max(y1,y2))continue;
+            //choose a loser point
+            double dis1 = sqrt(pow(intersect_x1-x1,2)+pow(intersect_y1-y1,2));
+            double dis2 = sqrt(pow(intersect_x2-x1,2)+pow(intersect_y2-y1,2));
+
+            double min_dis = std::min(dis1,dis2);
+            if (std::min(dis1,dis2)<dis_min) dis_min = std::min(dis1,dis2);
+        }
+    }
+    if (dis_min<(this->range_min)) dis_min = this->range_min;
+    return dis_min;
+
+
+}
 void Message_handle::publish_sensors(const ros::TimerEvent& event){
     //publish fake sensor
         //msgh.reddiff.body_pos();
+    //Twr: transformation from world to robot
     turtlelib::Transform2D Twr = this->reddiff.body_pos();
+    //Tro: transformation from robot to obstacles;
     turtlelib::Transform2D Tro;
     visualization_msgs::MarkerArray markerArray;
     std::normal_distribution<> gaussian{0,this->basic_sensor_variance};
@@ -319,13 +367,29 @@ void Message_handle::publish_sensors(const ros::TimerEvent& event){
     fake_sensor_pub.publish(markerArray);
     //publish laser data
     sensor_msgs::LaserScan scan;
+    double angle_increment = (this->angle_max-this->angle_min)/this->samples;
+    scan.header.stamp = ros::Time::now();
+    scan.header.frame_id = "red/base_footprint";
     scan.angle_min = this->angle_min;
     scan.angle_max = this->angle_max;
-    scan.angle_increment = (this->angle_max-this->angle_min)/this->samples;
+    scan.angle_increment = angle_increment;
     scan.time_increment = 0.2/this->samples;
     scan.range_min = this->range_min;
     scan.range_max = this->range_max;
-    // laser_pub.publihs(scan);
+    std::vector<float> ranges;
+    std::normal_distribution<> guassian{0,this->noise_std};
+    for(int i=0;i<this->samples;i++){
+        //we first calculate all the distance in world frame
+        double lidar_angle = Twr.rotation() + i*angle_increment;
+        turtlelib::Vector2D lidar_end = {Twr.translation().x+this->range_max*cos(lidar_angle),
+                                        Twr.translation().y+this->range_max*sin(lidar_angle)};
+        double dis = this->calculate_nearest_point(Twr.translation(),lidar_end);
+        dis+=guassian(random_seed());
+        //add noise to the lidar data
+        ranges.push_back((float)dis);
+    }
+    scan.ranges = ranges;
+    laser_pub.publish(scan);
 
 }
 int main(int argc, char ** argv){

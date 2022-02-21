@@ -8,6 +8,7 @@
   <!--yaml file to config the simulator-->
   <arg name = "config_file_world" default = "$(find nusim)/config/basic_world.yaml"/>
   <arg name = "config_file_nusim" default = "$(find nuturtle_description)/config/diff_params.yaml"/>
+  <arg name = "fake_lidar" default = "$(find nusim)/config/fake_lidar.yaml"/>
   <group if="$(arg use_rviz)">
     <!-- rviz will enable us to see the robot -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" />
@@ -15,6 +16,7 @@
   <!-- load yaml file into rosparam -->
   <rosparam command="load" file="$(arg config_file_world)" />
   <rosparam command="load" file="$(arg config_file_nusim)" />
+  <rosparam command="load" file="$(arg fake_lidar)" />
 
 
   <!-- load the urdf file into the parameter server -->
