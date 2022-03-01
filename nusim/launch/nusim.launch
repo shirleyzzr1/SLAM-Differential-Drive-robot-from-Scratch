@@ -1,22 +1,18 @@
 <launch>
   <arg name="use_rviz" default ="false" />
   <arg name="use_jsp" default="false" />
-  <arg name="robot_color" default="red" />
-  <arg name = "robot" default= "none"/>
+  <arg name = "robot" default= "nusim"/>
+  <!--this arg can be 'circle', 'teleop','none'-->
+  <arg name = "cmd_src" default="teleop" />
 
-
-  <!--yaml file to config the simulator-->
-  <arg name = "config_file_world" default = "$(find nusim)/config/basic_world.yaml"/>
-  <arg name = "config_file_nusim" default = "$(find nuturtle_description)/config/diff_params.yaml"/>
-  <arg name = "fake_lidar" default = "$(find nusim)/config/fake_lidar.yaml"/>
   <group if="$(arg use_rviz)">
     <!-- rviz will enable us to see the robot -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nusim)/rviz/nusim.rviz" />
   </group>
   <!-- load yaml file into rosparam -->
-  <rosparam command="load" file="$(arg config_file_world)" />
-  <rosparam command="load" file="$(arg config_file_nusim)" />
-  <rosparam command="load" file="$(arg fake_lidar)" />
+  <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
+  <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
+  <rosparam command="load" file="$(find nusim)/config/fake_lidar.yaml" />
 
 
   <!-- load the urdf file into the parameter server -->
@@ -29,18 +25,22 @@
   <group if="$(arg use_jsp)">
     <!-- The joint state publisher will be launched with a gui, read the urdf from /robot_description
   and publish the joint values on /joint_states --> 
-    <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
   </group>
   <!-- read nusim node and load the parameters inside launch-prefix ="gdb args"-->
-  <node pkg="nusim" type="nusim" name="nusim" output="screen" if="$(eval arg('robot') == 'nusim')"> >
-    <!-- <param name = "~x0" value = "0"/>
-    <param name = "~y0" value = "0"/>
-    <param name = "~theta0" value = "0"/>
-    <param name = "~rate" value = "50"/>
-    <param name = "~wheel_mean" value = "0" />
-    <param name = "~wheel_stddev" value = "0.5" />
-    <param name = "~slip_min" value = "0.1" />
-    <param name = "~slip_max" value = "0.5" /> -->
+  <node pkg="nusim" type="nusim" name="nusim" output="screen" if="$(eval arg('robot') == 'nusim')"/>
+
+  <!--use teleop to control the robot-->
+  <node name="turtlebot3_teleop_key" pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" output="screen"
+      if="$(eval arg('cmd_src') == 'teleop')"/>
+
+  <!--convert between cmd_vel and wheel_velocity-->
+  <node name="turtle_interface" pkg="nuturtle_control" type="turtle_interface"  />
+
+  <!--draw the circle -->
+  <node name="circle" pkg="nuturtle_control" type="circle"  
+      if="$(eval arg('cmd_src') == 'circle')">
+        <param name = "frequency" value = "50"/>
   </node>
   
  </launch>

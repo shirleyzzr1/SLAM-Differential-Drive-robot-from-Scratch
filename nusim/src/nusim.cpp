@@ -34,17 +34,19 @@
 #include "nuturtlebot_msgs/SensorData.h"
 #include <ros/console.h>
 #include <sensor_msgs/LaserScan.h>
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <random>
 #include <iostream>
 #include <math.h>       /* atan */
-
 /// \brief pass parameters in different threads
 class Message_handle{
 public:
     ros::Publisher sensor_pub;
     ros::Publisher fake_sensor_pub;
-
     ros::Publisher laser_pub;
+    ros::Publisher path_pub;
+
     nuturtlebot_msgs::SensorData sensor;
     double rate;
     double motor_cmd_to_radsec;
@@ -56,6 +58,7 @@ public:
 
     std::vector<double> cylinders_start_x;
     std::vector<double> cylinders_start_y;
+    std::vector<geometry_msgs::PoseStamped> poses;
     
     double cylinder_radius;
     double wheel_mean;
@@ -71,16 +74,20 @@ public:
     double resolution;
     double noise_std;
     double basic_sensor_variance;
+    double encoder_ticks_to_rad;
+    int count=0;
 
     //mean,stddev
     void wheel_callback(const nuturtlebot_msgs::WheelCommands& msg);
     bool teleportCallback(nusim::pose::Request &req,nusim::pose::Response &res);
-    void publish_sensors(const ros::TimerEvent& event);
+    void publish_sensors();
+    void main(const ros::TimerEvent& event);
 
     void drawmarker(visualization_msgs::MarkerArray &markerArray);
     void transform(turtlelib::Transform2D trans);
 
     double calculate_nearest_point(turtlelib::Vector2D robot_pos,turtlelib::Vector2D lidar_end);
+    void update_pos();
 
 
 
@@ -99,8 +106,6 @@ std::mt19937& random_seed(){
 static double sx,sy,stheta;
 // turtlelib::DiffDrive diffdrive;
 
-/// \brief the timestep of the program
-static int timestep;
 
 /// \brief reset the timestep and reset the robot to (0,0,0)
 /// request input service request message,Empty type
@@ -110,7 +115,6 @@ bool reset_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response
     sx = my_double_list[0];
     sy = my_double_list[1];
     stheta = my_double_list[2];
-    timestep = 0;
     return true;
 }
 /// \brief broadcast the transform from world frame to robot red/base_footprint frame
@@ -125,17 +129,14 @@ void Message_handle::transform(turtlelib::Transform2D trans){
     for(int i=0;i<cylinders_start_x.size();i++){
         dis = sqrt(pow(trans.translation().x-cylinders_start_x[i],2)+pow(trans.translation().y-cylinders_start_y[i],2));
         if (dis>=(collision_radius+cylinder_radius))continue;
-        // ROS_INFO("collision happened");
-        double move_dis = collision_radius+cylinder_radius-dis;
+        double move_dis;
+        move_dis = collision_radius+cylinder_radius-dis;
         theta = atan2(trans.translation().y-cylinders_start_y[i],trans.translation().x-cylinders_start_x[i]);
         move = {move_dis*cos(theta),move_dis*sin(theta)};
-        //move the wheel
-        // turtlelib::Twist2D twist = {0,move.x,move.y};
-        // this->diffdrive.IK_calculate(twist);
-        // this->diffdrive.set_wheel_pos(this->diffdrive.wheel_pos()+this->diffdrive.wheel_vel()*((double)1/rate));
-
-        // this->reddiff.IK_calculate(twist);
-        // this->reddiff.FK_calculate_vel(this->reddiff.wheel_vel()*((double)1/rate));
+        //move the wheel, aka increase the encoder data
+        // this->update_pos();
+        this->reddiff.set_body_pos({{trans.translation().x+move.x,trans.translation().x+move.x},trans.rotation()});
+        //update the red robot wheel_pos
         break;
     }
     static tf2_ros::TransformBroadcaster br;
@@ -144,8 +145,8 @@ void Message_handle::transform(turtlelib::Transform2D trans){
     transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "red/base_footprint";
     //first set the translation
-    transformStamped.transform.translation.x = this->reddiff.body_pos().translation().x;
-    transformStamped.transform.translation.y = this->reddiff.body_pos().translation().y;
+    transformStamped.transform.translation.x = trans.translation().x+move.x;
+    transformStamped.transform.translation.y = trans.translation().y+move.y;
     transformStamped.transform.translation.z = 0.0;
     //set the rotation og the robot
     tf2::Quaternion q;
@@ -155,6 +156,21 @@ void Message_handle::transform(turtlelib::Transform2D trans){
     transformStamped.transform.rotation.z = q.z();
     transformStamped.transform.rotation.w = q.w();
     br.sendTransform(transformStamped);
+    nav_msgs::Path path;
+    path.header.frame_id = "world";
+    path.header.stamp = ros::Time::now();
+    geometry_msgs::PoseStamped pose;
+    pose.header.stamp = ros::Time::now();
+    pose.header.frame_id = "world";
+    pose.pose.position.x = trans.translation().x+move.x;
+    pose.pose.position.y = trans.translation().y+move.y;
+    pose.pose.orientation.x = q.x();
+    pose.pose.orientation.y = q.y();
+    pose.pose.orientation.z = q.z();
+    pose.pose.orientation.w = q.w();
+    this->poses.push_back(pose);
+    path.poses = poses;
+    this->path_pub.publish(path);
 }
 /// \brief draw sets of cylinders with given start point and radius
 /// markerArray input the holder of the definition of markers
@@ -180,8 +196,8 @@ void Message_handle::drawmarker(visualization_msgs::MarkerArray &markerArray){
     marker.pose.orientation.z = 0.0;
     marker.pose.orientation.w = 1.0;
     //set the scale of different directions
-    marker.scale.x = this->cylinder_radius;
-    marker.scale.y = this->cylinder_radius;
+    marker.scale.x = 2*this->cylinder_radius;
+    marker.scale.y = 2*this->cylinder_radius;
     marker.scale.z = 0.25;
     //set the colors of the object
     marker.color.a = 1.0; // Don't forget to set the alpha!
@@ -281,11 +297,38 @@ void Message_handle::wheel_callback(const nuturtlebot_msgs::WheelCommands& msg){
 // void calculate_distance(turtlelib::Vector2D body_pos, turtlelib::Vector2D obstacle_pos){
 //     return sqrt(pow(body_pos.x-obstacle_pos.x,2)+pow(body_pos.y-obstacle_pos.y,2));
 // }
-double Message_handle::calculate_nearest_point(turtlelib::Vector2D robot_pos,turtlelib::Vector2D lidar_end){
+double Message_handle::calculate_nearest_point(turtlelib::Vector2D robot_pos,turtlelib::Vector2D lidar_end){    
     double x1,x2,y1,y2;
+    double x3,x4,y3,y4;
     double radius = this->cylinder_radius;
     double dy_sign = 1;
-    double dis_min =  this->range_max;
+    double dis_min =  this->range_max-(this->resolution);
+    double x_length,y_length;
+    ros::param::get("x_length", x_length);
+    ros::param::get("y_length", y_length);
+    std::vector<double> x_point = {-0.5*x_length,0.5*x_length,0.5*x_length,-0.5*x_length};
+    std::vector<double> y_point = {0.5*y_length,0.5*y_length,-0.5*y_length,-0.5*y_length};
+    x1 = robot_pos.x;
+    y1 = robot_pos.y;
+    x2 = lidar_end.x;
+    y2 = lidar_end.y;
+    for(int i=0;i<4;i++){
+        x3 = x_point[i];
+        y3 = y_point[i];
+        x4 = x_point[(i+1)%4];
+        y4 = y_point[(i+1)%4];
+        double D = (x1-x2)*(y3-y4)-(y1-y2)*(x3-x4);
+        if (D==0) continue;
+        double intersect_x = ((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4))/D;
+        double intersect_y = ((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4))/D;
+        if((intersect_x<std::min(x1,x2)-0.001)|| (intersect_x >std::max(x1,x2)+0.001) || 
+        (intersect_x<std::min(x3,x4)-0.001)|| (intersect_x >std::max(x3,x4)+0.001) ||
+        (intersect_y<std::min(y1,y2)-0.001)|| (intersect_y >std::max(y1,y2)+0.001) ||
+        (intersect_y<std::min(y3,y4)-0.001)|| (intersect_y >std::max(y3,y4)+0.001))continue;
+        double dis1 = sqrt(pow(intersect_x-x1,2)+pow(intersect_y-y1,2));
+
+        dis_min = std::min(dis1,dis_min);
+    }
     for(int i=0;i<this->cylinders_start_x.size();i++){
         //first move the circle to the (0,0),move the x,y accordingly
         x1 = robot_pos.x-this->cylinders_start_x[i];
@@ -307,15 +350,14 @@ double Message_handle::calculate_nearest_point(turtlelib::Vector2D robot_pos,tur
             double intersect_x2 = (D*dy-dy_sign*dx*sqrt(delta))/(dr*dr);
             double intersect_y2 = (-D*dx-abs(dy)*sqrt(delta))/(dr*dr);
             //check if the intersect is within the range of the line segment
-            if((intersect_x1<std::min(x1,x2)|| (intersect_x1 >std::max(x1,x2)) || 
-            intersect_x2<std::min(x1,x2)|| intersect_x2 >std::max(x1,x2) ||
-            intersect_y1<std::min(y1,y2)|| intersect_y1 >std::max(y1,y2) ) ||
-            intersect_y2<std::min(y1,y2)|| intersect_y2 >std::max(y1,y2))continue;
+            if(intersect_x1<std::min(x1,x2)-0.001|| (intersect_x1 >std::max(x1,x2)+0.001) || 
+            intersect_x2<std::min(x1,x2)-0.001|| intersect_x2 >std::max(x1,x2)+0.001 ||
+            intersect_y1<std::min(y1,y2)-0.001|| intersect_y1 >std::max(y1,y2)+0.001 ||
+            intersect_y2<std::min(y1,y2)-0.001|| intersect_y2 >std::max(y1,y2)+0.001)continue;
             //choose a loser point
             double dis1 = sqrt(pow(intersect_x1-x1,2)+pow(intersect_y1-y1,2));
             double dis2 = sqrt(pow(intersect_x2-x1,2)+pow(intersect_y2-y1,2));
 
-            double min_dis = std::min(dis1,dis2);
             if (std::min(dis1,dis2)<dis_min) dis_min = std::min(dis1,dis2);
         }
     }
@@ -324,37 +366,42 @@ double Message_handle::calculate_nearest_point(turtlelib::Vector2D robot_pos,tur
 
 
 }
-void Message_handle::publish_sensors(const ros::TimerEvent& event){
+void Message_handle::publish_sensors(){
     //publish fake sensor
         //msgh.reddiff.body_pos();
     //Twr: transformation from world to robot
     turtlelib::Transform2D Twr = this->reddiff.body_pos();
     //Tro: transformation from robot to obstacles;
-    turtlelib::Transform2D Tro;
+    // turtlelib::Transform2D Tro;
     visualization_msgs::MarkerArray markerArray;
     std::normal_distribution<> gaussian{0,this->basic_sensor_variance};
     double max_range;
     ros::param::get("/max_range",max_range);
 
     for(unsigned int i=0;i<cylinders_start_x.size();i++){
-        turtlelib::Vector2D trans={this->cylinders_start_x[i],this->cylinders_start_y[i]};
-        turtlelib::Transform2D Two = turtlelib::Transform2D(trans);
-        Tro = (Twr.inv())*Two;
+        turtlelib::Vector2D cylinders_pos={this->cylinders_start_x[i],this->cylinders_start_y[i]};
+        turtlelib::Transform2D Two(cylinders_pos);
+        //robot to object translation
+        turtlelib::Transform2D Tro = (Twr.inv())*Two;
         visualization_msgs::Marker marker;
         marker.header.frame_id = "red/base_footprint";
         marker.header.stamp = ros::Time();
         marker.id = i;
-        marker.type = visualization_msgs::Marker::CUBE;
-        if (Tro.rotation()>max_range) marker.action = visualization_msgs::Marker::DELETE;
+        marker.type = visualization_msgs::Marker::CYLINDER;
+        double dis = sqrt(pow(Tro.translation().x,2)+pow(Tro.translation().y,2));
+        double phi = atan2(Tro.translation().y,Tro.translation().x);
+        dis+=gaussian(random_seed());
+        phi+=gaussian(random_seed());
+        if (dis>max_range) marker.action = visualization_msgs::Marker::DELETE;
         else marker.action = visualization_msgs::Marker::ADD;
         //set the different poses
-        marker.pose.position.x = Tro.translation().x+gaussian(random_seed());
-        marker.pose.position.y = Tro.translation().y+gaussian(random_seed());
+        marker.pose.position.x = dis*cos(phi);
+        marker.pose.position.y = dis*sin(phi);
         marker.pose.position.z = 0;
         marker.pose.orientation.w = 1.0;
         //set the scale of different directions
-        marker.scale.x = this->cylinder_radius;
-        marker.scale.y = this->cylinder_radius;
+        marker.scale.x = 2*this->cylinder_radius;
+        marker.scale.y = 2*this->cylinder_radius;
         marker.scale.z = 0.25;
         //set the colors of the object
         marker.color.a = 1.0; // Don't forget to set the alpha!
@@ -392,6 +439,34 @@ void Message_handle::publish_sensors(const ros::TimerEvent& event){
     laser_pub.publish(scan);
 
 }
+void Message_handle::update_pos(){
+    std::uniform_real_distribution<double> uniform{this->slip_min, this->slip_max};
+
+    turtlelib::Vector2D wheel =  {this->diffdrive.wheel_vel().x/this->rate,this->diffdrive.wheel_vel().y/this->rate};
+    //add slip to the wheel
+    double eta;
+    eta = uniform(random_seed());
+    wheel += wheel*(eta/10);
+    this->diffdrive.wheel_pos()+=wheel;
+
+    //publish the message on 
+    this->sensor.stamp = ros::Time::now();
+    // ROS_WARN("x: %f, y: %f"diffdrive.wheel_pos().x,diffdrive.wheel_pos().y);
+    this->sensor.left_encoder =  this->diffdrive.wheel_pos().x / (2 * turtlelib::PI) * encoder_ticks_to_rad;
+    this->sensor.right_encoder =  this->diffdrive.wheel_pos().y / (2 * turtlelib::PI) * encoder_ticks_to_rad;
+    this->sensor_pub.publish(this->sensor);
+}
+void Message_handle::main(const ros::TimerEvent& event){
+    this->transform(this->reddiff.body_pos());
+    this->update_pos();
+    if(this->count==10){
+        this->publish_sensors();
+        this->count=0;
+    }
+    this->count+=1;
+
+}
+
 int main(int argc, char ** argv){
     //init the node
     ros::init(argc, argv, "nusim");
@@ -444,7 +519,6 @@ int main(int argc, char ** argv){
     ros::Publisher vis_pub = n.advertise<visualization_msgs::MarkerArray>( "obstacles", 0 ,true);
     ros::Publisher timestep_pub = n.advertise<std_msgs::UInt64>( "timestep", 0);
     std_msgs::UInt64 msg_timestep;
-    timestep = ros::Time::now().toSec();
 
     ros::Rate r(rate); // 50 hz by default
 
@@ -475,11 +549,11 @@ int main(int argc, char ** argv){
 
     ros::Subscriber wheel_sub= n.subscribe("/wheel_cmd",1000,&Message_handle::wheel_callback,&msgh);
 
-
     msgh.sensor_pub = n.advertise<nuturtlebot_msgs::SensorData>("/sensor_data", 1000);
     msgh.fake_sensor_pub = n.advertise<visualization_msgs::MarkerArray>( "/fake_sensor", 0);
 
     msgh.laser_pub = n.advertise<sensor_msgs::LaserScan>("sensor_msgs/LaserScan", 1000);
+    msgh.path_pub = n.advertise<nav_msgs::Path>("nav_msgs/Path", 1000);
 
     msgh.wheel_mean = wheel_mean;
     msgh.wheel_stddev = wheel_stddev;
@@ -494,38 +568,14 @@ int main(int argc, char ** argv){
     msgh.samples = samples;
     msgh.noise_std = noise_std;
     msgh.basic_sensor_variance = basic_sensor_variance;
+    msgh.encoder_ticks_to_rad =encoder_ticks_to_rad;
+    msgh.count=0;
 
     //the timer to publish the sensor and laser data every 0.2 seconds
-    ros::Timer timer_sensors = n.createTimer(ros::Duration(0.2), &Message_handle::publish_sensors,&msgh);
+    // ros::Timer timer_sensors = n.createTimer(ros::Duration(0.2), &Message_handle::publish_sensors,&msgh);
 
-    std::uniform_real_distribution<double> uniform{msgh.slip_min, msgh.slip_max};
+    ros::Timer timer_main = n.createTimer(ros::Duration(0.01), &Message_handle::main,&msgh);
 
-    while (ros::ok())
-    {
-        //broadcast the transformfrom world frame to robot frame
-        msgh.transform(msgh.reddiff.body_pos());
-        // ROS_INFO("in ros_main function,%lf",diffdrive.wheel_vel().x);
-
-        turtlelib::Vector2D wheel =  {msgh.diffdrive.wheel_vel().x/msgh.rate,msgh.diffdrive.wheel_vel().y/msgh.rate};
-        //add slip to the wheel
-        double eta;
-        eta = uniform(random_seed());
-
-        wheel += wheel*(eta/10);
-        msgh.diffdrive.wheel_pos()+=wheel;
-
-        //publish the message on 
-        msgh.sensor.stamp = ros::Time::now();
-        // ROS_WARN("x: %f, y: %f"diffdrive.wheel_pos().x,diffdrive.wheel_pos().y);
-        msgh.sensor.left_encoder =  msgh.diffdrive.wheel_pos().x / (2 * turtlelib::PI) * encoder_ticks_to_rad;
-        msgh.sensor.right_encoder =  msgh.diffdrive.wheel_pos().y / (2 * turtlelib::PI) * encoder_ticks_to_rad;
-        msgh.sensor_pub.publish(msgh.sensor);
-
-        msg_timestep.data = timestep;
-        //publish the timestep
-        timestep_pub.publish(msg_timestep);
-        ros::spinOnce();
-        r.sleep();
-    }
+    ros::spin();
     return 0;
 }
