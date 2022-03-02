@@ -25,7 +25,7 @@
   <group if="$(arg use_jsp)">
     <!-- The joint state publisher will be launched with a gui, read the urdf from /robot_description
   and publish the joint values on /joint_states --> 
-    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
   </group>
   <!-- read nusim node and load the parameters inside launch-prefix ="gdb args"-->
   <node pkg="nusim" type="nusim" name="nusim" output="screen" if="$(eval arg('robot') == 'nusim')"/>

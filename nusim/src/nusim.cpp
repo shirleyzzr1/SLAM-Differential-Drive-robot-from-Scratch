@@ -10,7 +10,10 @@
 /// SUBSCRIBERS:
 ///    wheel_cmd(nuturtlebot_msgs::WheelCommands): the velocity of the wheels
 /// PUBLISHERS:
-///    sensor_data(nuturtlebot_msgs::SensorData): the sensor data like encoder
+///     sensor_data(nuturtlebot_msgs::SensorData): the sensor data like encoder
+///     fake_sensor(visualization_msgs::MarkerArray): the relative sensor pos in the robot basefootprint
+///     laser(sensor_msgs::LaserScan): the simulated laser scan message of the robot
+ ///    red_path(nav_msgs::Path):the path of the red robot
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include <cstdio>
@@ -126,19 +129,19 @@ void Message_handle::transform(turtlelib::Transform2D trans){
     ros::param::get("/collision_radius",collision_radius);
     turtlelib::Vector2D move = {0,0};
     //if intersect with other cylinder, move towards the tangent line
-    // for(int i=0;i<cylinders_start_x.size();i++){
-    //     dis = sqrt(pow(trans.translation().x-cylinders_start_x[i],2)+pow(trans.translation().y-cylinders_start_y[i],2));
-    //     if (dis>=(collision_radius+cylinder_radius))continue;
-    //     double move_dis;
-    //     move_dis = collision_radius+cylinder_radius-dis;
-    //     theta = atan2(trans.translation().y-cylinders_start_y[i],trans.translation().x-cylinders_start_x[i]);
-    //     move = {move_dis*cos(theta),move_dis*sin(theta)};
-    //     //move the wheel, aka increase the encoder data
-    //     // this->update_pos();
-    //     this->reddiff.set_body_pos({{trans.translation().x+move.x,trans.translation().x+move.x},trans.rotation()});
-    //     //update the red robot wheel_pos
-    //     break;
-    // }
+    for(int i=0;i<cylinders_start_x.size();i++){
+        dis = sqrt(pow(trans.translation().x-cylinders_start_x[i],2)+pow(trans.translation().y-cylinders_start_y[i],2));
+        if (dis>=(collision_radius+cylinder_radius))continue;
+        double move_dis;
+        move_dis = collision_radius+cylinder_radius-dis;
+        theta = atan2(trans.translation().y-cylinders_start_y[i],trans.translation().x-cylinders_start_x[i]);
+        move = {move_dis*cos(theta),move_dis*sin(theta)};
+        //move the wheel, aka increase the encoder data
+        // this->update_pos();
+        // this->reddiff.set_body_pos({{trans.translation().x+move.x,trans.translation().x+move.x},trans.rotation()});
+        //update the red robot wheel_pos
+        break;
+    }
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
@@ -147,6 +150,7 @@ void Message_handle::transform(turtlelib::Transform2D trans){
     //first set the translation
     transformStamped.transform.translation.x = trans.translation().x+move.x;
     transformStamped.transform.translation.y = trans.translation().y+move.y;
+    
     transformStamped.transform.translation.z = 0.0;
     //set the rotation og the robot
     tf2::Quaternion q;
@@ -383,15 +387,10 @@ void Message_handle::publish_sensors(const ros::TimerEvent& event){
     for(unsigned int i=0;i<cylinders_start_x.size();i++){
         turtlelib::Vector2D cylinders_pos={this->cylinders_start_x[i],this->cylinders_start_y[i]};
         double radians = atan2(this->cylinders_start_y[i],this->cylinders_start_x[i]);
-        radians = turtlelib::normalize_angle(radians);
+        // radians = turtlelib::normalize_angle(radians);
         turtlelib::Transform2D Two(cylinders_pos,radians);
         //robot to object translation
         turtlelib::Transform2D Tro = (Twr.inv())*Two;
-        std::cout << "i" << i<<std::endl;
-        std::cout << "Twr:" << Twr << std::endl;
-        std::cout << "Twr_inv" << Twr.inv() << std::endl;
-        std::cout << "Tro:"<<Tro << std::endl;
-        std::cout << "Two:"<<Two << std::endl;
 
         visualization_msgs::Marker marker;
         marker.header.frame_id = "red/base_footprint";
@@ -399,16 +398,18 @@ void Message_handle::publish_sensors(const ros::TimerEvent& event){
         marker.id = i;
         marker.type = visualization_msgs::Marker::CYLINDER;
         double dis = sqrt(pow(Tro.translation().x,2)+pow(Tro.translation().y,2));
-        // double phi = atan2(Tro.translation().y,Tro.translation().x);
-        // dis+=gaussian(random_seed());
-        // phi+=gaussian(random_seed());
+        double phi = atan2(Tro.translation().y,Tro.translation().x);
+        // double phi = Tro.rotation();
+        dis+=gaussian(random_seed());
+        phi+=gaussian(random_seed());
         if (dis>max_range) marker.action = visualization_msgs::Marker::DELETE;
         else marker.action = visualization_msgs::Marker::ADD;
         //set the different poses
-        // marker.pose.position.x = dis*cos(phi);
-        // marker.pose.position.y = dis*sin(phi);
-        marker.pose.position.x = Tro.translation().x;
-        marker.pose.position.y = Tro.translation().y;
+        marker.pose.position.x = dis*cos(phi);
+        marker.pose.position.y = dis*sin(phi);
+        // ROS_INFO("pose %lf,%lf",dis*cos(phi),dis*sin(phi));
+        // if(i==1)
+        // ROS_INFO("dis%lf,angle:%lf,posx:%lf,posy:%lf",dis,phi,dis*cos(phi),dis*sin(phi));
         marker.pose.position.z = 0;
         marker.pose.orientation.w = 1.0;
         //set the scale of different directions
@@ -425,30 +426,30 @@ void Message_handle::publish_sensors(const ros::TimerEvent& event){
     }
     fake_sensor_pub.publish(markerArray);
     //publish laser data
-    // sensor_msgs::LaserScan scan;
-    // double angle_increment = (this->angle_max-this->angle_min)/this->samples;
-    // scan.header.stamp = ros::Time::now();
-    // scan.header.frame_id = "red/base_footprint";
-    // scan.angle_min = this->angle_min;
-    // scan.angle_max = this->angle_max;
-    // scan.angle_increment = angle_increment;
-    // scan.time_increment = 0.2/this->samples;
-    // scan.range_min = this->range_min;
-    // scan.range_max = this->range_max;
-    // std::vector<float> ranges;
-    // std::normal_distribution<> guassian{0,this->noise_std};
-    // for(int i=0;i<this->samples;i++){
-    //     //we first calculate all the distance in world frame
-    //     double lidar_angle = Twr.rotation() + i*angle_increment;
-    //     turtlelib::Vector2D lidar_end = {Twr.translation().x+this->range_max*cos(lidar_angle),
-    //                                     Twr.translation().y+this->range_max*sin(lidar_angle)};
-    //     double dis = this->calculate_nearest_point(Twr.translation(),lidar_end);
-    //     dis+=guassian(random_seed());
-    //     //add noise to the lidar data
-    //     ranges.push_back((float)dis);
-    // }
-    // scan.ranges = ranges;
-    // laser_pub.publish(scan);
+    sensor_msgs::LaserScan scan;
+    double angle_increment = (this->angle_max-this->angle_min)/this->samples;
+    scan.header.stamp = ros::Time::now();
+    scan.header.frame_id = "red/base_footprint";
+    scan.angle_min = this->angle_min;
+    scan.angle_max = this->angle_max;
+    scan.angle_increment = angle_increment;
+    scan.time_increment = 0.2/this->samples;
+    scan.range_min = this->range_min;
+    scan.range_max = this->range_max;
+    std::vector<float> ranges;
+    std::normal_distribution<> guassian{0,this->noise_std};
+    for(int i=0;i<this->samples;i++){
+        //we first calculate all the distance in world frame
+        double lidar_angle = Twr.rotation() + i*angle_increment;
+        turtlelib::Vector2D lidar_end = {Twr.translation().x+this->range_max*cos(lidar_angle),
+                                        Twr.translation().y+this->range_max*sin(lidar_angle)};
+        double dis = this->calculate_nearest_point(Twr.translation(),lidar_end);
+        dis+=guassian(random_seed());
+        //add noise to the lidar data
+        ranges.push_back((float)dis);
+    }
+    scan.ranges = ranges;
+    laser_pub.publish(scan);
 
 }
 void Message_handle::update_pos(){
@@ -483,12 +484,6 @@ void Message_handle::update_pos(){
 void Message_handle::main(const ros::TimerEvent& event){
     this->update_pos();
     this->transform(this->reddiff.body_pos());
-
-    if(this->count==10){
-        // this->publish_sensors();
-        this->count=0;
-    }
-    this->count+=1;
 
 }
 
@@ -576,8 +571,8 @@ int main(int argc, char ** argv){
     msgh.sensor_pub = n.advertise<nuturtlebot_msgs::SensorData>("/sensor_data", 1000);
     msgh.fake_sensor_pub = n.advertise<visualization_msgs::MarkerArray>( "/fake_sensor", 0);
 
-    msgh.laser_pub = n.advertise<sensor_msgs::LaserScan>("sensor_msgs/LaserScan", 1000);
-    msgh.path_pub = n.advertise<nav_msgs::Path>("nav_msgs/Path", 1000);
+    msgh.laser_pub = n.advertise<sensor_msgs::LaserScan>("/laser", 1000);
+    msgh.path_pub = n.advertise<nav_msgs::Path>("/red_path", 1000);
 
     msgh.wheel_mean = wheel_mean;
     msgh.wheel_stddev = wheel_stddev;
