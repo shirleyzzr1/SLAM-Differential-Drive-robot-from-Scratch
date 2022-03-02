@@ -127,7 +127,7 @@ int main(int argc, char ** argv){
     //publish the joint states to provide the angle
     msgh.joint_pub = n.advertise<sensor_msgs::JointState>("blue/joint_states",1000);
 
-    double rate = 50;
+    double rate = 100;
     ros::Rate r(rate); // 50 hz by default
 
     while(ros::ok()){

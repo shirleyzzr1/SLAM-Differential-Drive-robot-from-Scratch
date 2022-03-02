@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -125,6 +125,10 @@ Visualization Manager:
           Value: false
         red/imu_link:
           Value: false
+        red/wheel_left_link:
+          Value: false
+        red/wheel_right_link:
+          Value: false
         world:
           Value: true
       Marker Alpha: 1
@@ -142,6 +146,10 @@ Visualization Manager:
               red/caster_back_link:
                 {}
               red/imu_link:
+                {}
+              red/wheel_left_link:
+                {}
+              red/wheel_right_link:
                 {}
       Update Interval: 0
       Value: true
@@ -270,4 +278,4 @@ Window Geometry:
     collapsed: false
   Width: 1386
   X: 72
-  Y: 282
+  Y: 245

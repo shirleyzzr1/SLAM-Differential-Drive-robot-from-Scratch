@@ -1,7 +1,7 @@
 #this is the yaml file for nusim basic_world configuration
 ---
 robot_start: [-0.6,0.8,1.57]
-cylinder_radius: 0.3
+cylinder_radius: 0.033
 cylinders_num: 3
 cylinders_start_x: [-0.7,0.3,0.4]
 cylinders_start_y: [-0.8,-0.8,0.8]
@@ -14,12 +14,12 @@ y_length: 4
 x0: 0
 y0: 0
 theta0: 0
-rate: 50
+rate_nusim: 100
 wheel_mean: 0
-wheel_stddev: 0.5
+wheel_stddev: 0
 slip_min: 0
-slip_max: 1
+slip_max: 0
 #basic_sensor_config
-basic_sensor_variance: 0
+basic_sensor_variance: 0.1
 #max_range in radians
 max_range: 2

@@ -4,7 +4,7 @@
   <!--the arg can be 'nusim', 'localhost','<turtlebotname>','none'-->
   <arg name = "robot" default= "nusim"/>
   <arg name = "use_rviz" default = 'false'/>
-  <arg name = "frequency" default = "50" />
+  <arg name = "frequency" default = "10" />
   <arg name = "odom_id" default = "odom" />
   <arg name = "use_jsp" default = 'false' />
   <!-- <arg name = "x_length" default = "3"/>
@@ -24,10 +24,11 @@
   <!-- load yaml file into rosparam -->
   <rosparam command="load" file="$(find nuturtle_description)/config/diff_params.yaml" />
   <rosparam command="load" file="$(find nusim)/config/basic_world.yaml" />
+  <rosparam command="load" file="$(find nusim)/config/fake_lidar.yaml" />
   <!--include basic_remote.launch to run code on turtlebot3-->
-  <include file = "$(find nuturtle_control)/launch/basic_remote.launch" if="$(eval arg('robot') != 'nusim')">
+  <!-- <include file = "$(find nuturtle_control)/launch/basic_remote.launch" if="$(eval arg('robot') != 'nusim')">
     <arg name="robot" value="$(arg robot)"/>
-  </include>
+  </include> -->
   <!--load rviz is use_rivz is set to true-->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuturtle_control)/rviz/nuturtle_control.rviz" 
         if="$(eval arg('use_rviz') == true)"/>
@@ -65,6 +66,7 @@
   <!-- The robot_state_publisher reads the urdf from /robot_description parameter
       and listens to joint information on the /joint_states topic -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+
   </group>
 
   <group ns = "red">
@@ -75,7 +77,7 @@
       and listens to joint information on the /joint_states topic -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
 
-  <node name="joint_state_publisher_gui" pkg="joint_state_publisher_gui" type="joint_state_publisher_gui"/>
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
   </group>
 
   <!--publish a static transform from world to odom-->

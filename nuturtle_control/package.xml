@@ -50,7 +50,6 @@
   <exec_depend>joint_state_publisher_gui</exec_depend>
   <exec_depend>turtlebot3</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
-  <exec_depend>tf</exec_depend>
   <exec_depend>nusim</exec_depend>
   <exec_depend>nuturtle_description</exec_depend>
   <exec_depend>turtlebot3_teleop</exec_depend>

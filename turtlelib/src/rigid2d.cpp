@@ -12,17 +12,26 @@ namespace turtlelib{
         // rad  = rad-factor*PI;
         // return rad;
         // reduce the angle  
-        int angle;
-        angle = int(rad2deg(rad));
-        angle =  angle % 360; 
+        // int angle;
+        // angle = int(rad2deg(rad));
+        // angle =  angle % 360; 
 
-        // force it to be the positive remainder, so that 0 <= angle < 360  
-        angle = (angle + 360) % 360;  
+        // // force it to be the positive remainder, so that 0 <= angle < 360  
+        // angle = (angle + 360) % 360;  
 
-        // force into the minimum absolute value residue class, so that -180 < angle <= 180  
-        if (angle > 180)  
-            angle -= 360; 
-        return deg2rad(angle);
+        // // force into the minimum absolute value residue class, so that -180 < angle <= 180  
+        // if (angle > 180)  
+        //     angle -= 360; 
+        // return deg2rad(angle);
+        while(rad<-PI || rad>PI){
+            if(rad<-PI){
+                rad=rad+2*PI;
+            }
+            else if(rad>PI){
+                rad=rad-2*PI;
+            }
+        }
+        return rad;
     }
 
     std::ostream & operator<<(std::ostream & os, const Vector2D & v){
@@ -161,7 +170,8 @@ namespace turtlelib{
     }
    
     Vector2D operator+(Vector2D lhs,const Vector2D & rhs){
-        return lhs+=rhs;
+        
+        return {lhs.x+rhs.x,lhs.y+rhs.y};
     }
 
     Vector2D operator-(Vector2D lhs,const Vector2D & rhs){

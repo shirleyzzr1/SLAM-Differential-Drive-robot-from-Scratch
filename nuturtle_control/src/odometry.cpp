@@ -22,13 +22,17 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <std_msgs/Float64.h>
-
+#include <nav_msgs/Path.h>
+#include <geometry_msgs/PoseStamped.h>
 
 class Message_handle{
 public:
     std::string body_id,odom_id,wheel_left,wheel_right; 
     ros::Publisher odom_pub;
     ros::ServiceServer set_pose;
+    ros::Publisher path_pub;
+
+    std::vector<geometry_msgs::PoseStamped> poses;
 
     turtlelib::DiffDrive diffdrive;
     double first_joint_flag;
@@ -79,7 +83,9 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
         this->first_joint_flag = 0;
     }
     this->diffdrive.FK_calculate(wheel_pos);
-    
+    turtlelib::Transform2D trans = {{this->diffdrive.body_pos().translation().x,this->diffdrive.body_pos().translation().y},\
+                turtlelib::normalize_angle(this->diffdrive.body_pos().rotation())};
+    this->diffdrive.set_body_pos(trans);
     geometry_msgs::Pose pos;
     pos.position.x = this->diffdrive.body_pos().translation().x;
     pos.position.y = this->diffdrive.body_pos().translation().y;
@@ -99,6 +105,22 @@ void Message_handle::joint_state_callback(const sensor_msgs::JointState& msg){
     odom.twist.twist.angular.z = this->diffdrive.bodytwist().thetadot;
 
     odom_pub.publish(odom);
+
+    nav_msgs::Path path;
+    path.header.frame_id = this->odom_id;
+    path.header.stamp = ros::Time::now();
+    geometry_msgs::PoseStamped pose;
+    pose.header.stamp = ros::Time::now();
+    pose.header.frame_id = this->odom_id;
+    pose.pose.position.x = this->diffdrive.body_pos().translation().x;
+    pose.pose.position.y = this->diffdrive.body_pos().translation().y;
+    pose.pose.orientation.x = q.x();
+    pose.pose.orientation.y = q.y();
+    pose.pose.orientation.z = q.z();
+    pose.pose.orientation.w = q.w();
+    this->poses.push_back(pose);
+    path.poses = poses;
+    this->path_pub.publish(path);
 
 }
 /// \brief set the pose of the robot
@@ -144,8 +166,9 @@ int main(int argc, char ** argv){
     //publish the odom
     msgh.odom_pub = n.advertise<nav_msgs::Odometry>("odom", 1000);
     msgh.set_pose = n.advertiseService("set_pose",&Message_handle::set_pose_callback,&msgh);
+    msgh.path_pub = n.advertise<nav_msgs::Path>("nav_msgs/Path", 1000);
 
-    ros::Rate r(50);
+    ros::Rate r(100);
     while(ros::ok()){
         msgh.transform();
         ros::spinOnce();
