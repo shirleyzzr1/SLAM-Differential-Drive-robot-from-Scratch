@@ -68,3 +68,8 @@ final pos( -0.19,0.03)
 ![](images/circle.gif)
 
 if without slip, the odom works okay. However, if the radius is reduced, the  odom gets worse.
+
+![](images/odometry.png)
+
+Here is the picture with two robots. The red one is the real robot position, and the blue one is the odometry position. The
+red robot has wheel noise and obstacle avoidance, the odometry has just wheel noise and is not able to detect any obstacle.
