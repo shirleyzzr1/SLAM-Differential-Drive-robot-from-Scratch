@@ -87,7 +87,7 @@ public:
     void main(const ros::TimerEvent& event);
 
     void drawmarker(visualization_msgs::MarkerArray &markerArray);
-    void transform(turtlelib::Transform2D trans);
+    void transform();
 
     double calculate_nearest_point(turtlelib::Vector2D robot_pos,turtlelib::Vector2D lidar_end);
     void update_pos();
@@ -122,35 +122,40 @@ bool reset_callback(std_srvs::Empty::Request& request, std_srvs::Empty::Response
 }
 /// \brief broadcast the transform from world frame to robot red/base_footprint frame
 /// x,y,theta input the pose of the robot relative to the world frame
-void Message_handle::transform(turtlelib::Transform2D trans){
+void Message_handle::transform(){
+    turtlelib::Transform2D trans = this->reddiff.body_pos();
     //check for collision after each update
     double collision_radius;
     double theta,dis;
     ros::param::get("/collision_radius",collision_radius);
     turtlelib::Vector2D move = {0,0};
+    // ROS_INFO("trans1:%lf,%lf,%lf",trans.translation().x,trans.translation().y,trans.rotation());
     //if intersect with other cylinder, move towards the tangent line
     for(int i=0;i<cylinders_start_x.size();i++){
         dis = sqrt(pow(trans.translation().x-cylinders_start_x[i],2)+pow(trans.translation().y-cylinders_start_y[i],2));
         if (dis>=(collision_radius+cylinder_radius))continue;
         double move_dis;
-        move_dis = collision_radius+cylinder_radius-dis;
+        move_dis = collision_radius+cylinder_radius;
+        //move_dis = collision_radius;
         theta = atan2(trans.translation().y-cylinders_start_y[i],trans.translation().x-cylinders_start_x[i]);
-        move = {move_dis*cos(theta),move_dis*sin(theta)};
-        //move the wheel, aka increase the encoder data
-        // this->update_pos();
-        // this->reddiff.set_body_pos({{trans.translation().x+move.x,trans.translation().x+move.x},trans.rotation()});
-        //update the red robot wheel_pos
+move = {cylinders_start_x[i]+move_dis*cos(                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ),cylinders_start_y[i]+move_dis*sin(theta)};
+
+        this->reddiff.set_body_pos({{move.x,move.y},trans.rotation()});
+        // trans = this->reddiff.body_pos();
         break;
     }
+    trans = this->reddiff.body_pos();
+    // ROS_INFO("trans2:%lf,%lf,%lf",trans.translation().x,trans.translation().y,trans.rotation());
     static tf2_ros::TransformBroadcaster br;
     geometry_msgs::TransformStamped transformStamped;
     transformStamped.header.stamp = ros::Time::now();
     transformStamped.header.frame_id = "world";
     transformStamped.child_frame_id = "red/base_footprint";
     //first set the translation
-    transformStamped.transform.translation.x = trans.translation().x+move.x;
-    transformStamped.transform.translation.y = trans.translation().y+move.y;
-    
+    // transformStamped.transform.translation.x = trans.translation().x+move.x;
+    // transformStamped.transform.translation.y = trans.translation().y+move.y;
+    transformStamped.transform.translation.x = trans.translation().x;
+    transformStamped.transform.translation.y = trans.translation().y;
     transformStamped.transform.translation.z = 0.0;
     //set the rotation og the robot
     tf2::Quaternion q;
@@ -166,8 +171,8 @@ void Message_handle::transform(turtlelib::Transform2D trans){
     geometry_msgs::PoseStamped pose;
     pose.header.stamp = ros::Time::now();
     pose.header.frame_id = "world";
-    pose.pose.position.x = trans.translation().x+move.x;
-    pose.pose.position.y = trans.translation().y+move.y;
+    pose.pose.position.x = trans.translation().x;
+    pose.pose.position.y = trans.translation().y;
     pose.pose.orientation.x = q.x();
     pose.pose.orientation.y = q.y();
     pose.pose.orientation.z = q.z();
@@ -483,7 +488,7 @@ void Message_handle::update_pos(){
 }
 void Message_handle::main(const ros::TimerEvent& event){
     this->update_pos();
-    this->transform(this->reddiff.body_pos());
+    this->transform();
 
 }
 
@@ -601,7 +606,7 @@ int main(int argc, char ** argv){
     {
         //broadcast the transformfrom world frame to robot frame
         msgh.update_pos();
-        msgh.transform(msgh.reddiff.body_pos());
+        msgh.transform();
         ros::spinOnce();
         r.sleep();
     }
