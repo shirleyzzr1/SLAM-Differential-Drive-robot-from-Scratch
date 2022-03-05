@@ -1,7 +1,6 @@
 <launch>
   <arg name = "robot" default="nusim"/>
   <arg name = "use_rviz" default='false'/>
-  <arg name = "ekf" default='false'/>
   <arg name = "cmd_src" default="teleop" />
   <!--the name of the joint of blue robot-->
   <param name = "wheel_left" value = "blue/wheel_left_joint"/>
@@ -19,11 +18,8 @@
   <!--the simulation robot world-->
   <node name = "nusim" pkg="nusim" type="nusim" output="screen" if="$(eval arg('robot') == 'nusim')"/>
 
-  <!--use teleop to control the robot-->
-  <!-- <node name="turtlebot3_teleop_key" pkg="turtlebot3_teleop" type="turtlebot3_teleop_key" output="screen"/> -->
-
   <!--nuslam node for ekf-->
-  <node name = "ekf" pkg="nuslam" type="ekf" output="screen" if="$(eval arg('ekf') == true)"/>
+  <node name = "ekf" pkg="nuslam" type="ekf" output="screen"/>
 
   <!--control the robot to run in a circle-->
   <node name = "circle" pkg="nuturtle_control" type="circle" if="$(eval arg('cmd_src') == 'circle')">

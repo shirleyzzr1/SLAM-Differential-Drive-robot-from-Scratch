@@ -2,11 +2,11 @@
 
 #### package descripstion
 
-This package provide a simulated robot environment, which visualize the cylinders at given start place and visulize a red turtle3-burger robot.
+This package provides a simulated robot environment, which visualize the cylinders at given start place and visulize a red turtle3-burger robot.
 
 #### Launch file description
 
-The launch file loads the rviz, joint_state_publier, joint_state_publisher_gui, and nusim node. Also, the yaml file for some basic configurations is loaded and xacro file for the robot is loaded.
+The launch file loads the rviz, joint_state_publier, and nusim node. Also, the yaml file for some basic configurations is loaded and xacro file for the robot is loaded.
 
 #### parameters
 
