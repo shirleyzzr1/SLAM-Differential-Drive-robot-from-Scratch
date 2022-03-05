@@ -1,4 +1,4 @@
 #the process noise for the robot motion model
-std_q: [1,1,1]
+std_q: [0.5,0.5,0.5]
 #the noise in measurement model
-std_r: [0.1,0.1]
+std_r: [1,1]

@@ -174,20 +174,20 @@ void Message_handle::ekf_update(){
 
     this->current_state(0,0)=turtlelib::normalize_angle(this->current_state(0,0));
 
-    std::cout << "H" <<std::endl;
-    std::cout << H << std::endl;
-    std::cout <<"covariance" <<std::endl;
-    std::cout << this->covariance <<std::endl;
-    std::cout << "K" << std::endl;
-    std::cout << K <<std::endl;
-    ROS_INFO("realm:%lf,%lf.%lf,%lf,%lf,%lf",real_measurements(0,0),real_measurements(1,0),real_measurements(2,0),real_measurements(3,0),\
-                real_measurements(4,0),real_measurements(5,0));
-    ROS_INFO("theom:%lf,%lf.%lf,%lf,%lf,%lf",theoretical_measurements(0,0),theoretical_measurements(1,0),theoretical_measurements(2,0),theoretical_measurements(3,0),\
-                theoretical_measurements(4,0),theoretical_measurements(5,0));
-    ROS_INFO("current_state:%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",this->current_state(0,0),this->current_state(1,0),this->current_state(2,0),\
-    this->current_state(3,0),this->current_state(4,0),this->current_state(5,0),\
-    this->current_state(6,0),this->current_state(7,0),this->current_state(8,0));
-    std::cout << std::endl;
+    // std::cout << "H" <<std::endl;
+    // std::cout << H << std::endl;
+    // std::cout <<"covariance" <<std::endl;
+    // std::cout << this->covariance <<std::endl;
+    // std::cout << "K" << std::endl;
+    // std::cout << K <<std::endl;
+    // ROS_INFO("realm:%lf,%lf.%lf,%lf,%lf,%lf",real_measurements(0,0),real_measurements(1,0),real_measurements(2,0),real_measurements(3,0),\
+    //             real_measurements(4,0),real_measurements(5,0));
+    // ROS_INFO("theom:%lf,%lf.%lf,%lf,%lf,%lf",theoretical_measurements(0,0),theoretical_measurements(1,0),theoretical_measurements(2,0),theoretical_measurements(3,0),\
+    //             theoretical_measurements(4,0),theoretical_measurements(5,0));
+    // ROS_INFO("current_state:%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",this->current_state(0,0),this->current_state(1,0),this->current_state(2,0),\
+    // this->current_state(3,0),this->current_state(4,0),this->current_state(5,0),\
+    // this->current_state(6,0),this->current_state(7,0),this->current_state(8,0));
+    // std::cout << std::endl;
 
     //posterior covariance
     this->covariance = (arma::eye<arma::mat>(2*this->cylinders_num+3,2*this->cylinders_num+3)-this->K*this->H)*this->covariance;

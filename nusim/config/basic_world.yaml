@@ -14,7 +14,7 @@ y_length: 4
 x0: 0
 y0: 0
 theta0: 0
-rate_nusim: 100
+rate_nusim: 30
 wheel_mean: 0
 wheel_stddev: 0.01
 slip_min: 0

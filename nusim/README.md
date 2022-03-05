@@ -29,7 +29,8 @@ y_length: 4
 x0: 0
 y0: 0
 theta0: 0
-rate_nusim: 100
+rate_nusim: 30
+#add the wheel noise here
 wheel_mean: 0
 wheel_stddev: 0.01
 slip_min: 0
@@ -55,5 +56,6 @@ other parameters which used in launch file can be set is shown as below.
 roslaunch nusim nusim.launch use_rviz:=true use_jsp:=true
 ```
 ![](images/nusim_withpath.gif)
+
 In this scene, you will see the path of the robot, the laser scan, and red obstacles which indicate the 
 the real position and the yellow obstacles indicating the fake sensor measurements.
