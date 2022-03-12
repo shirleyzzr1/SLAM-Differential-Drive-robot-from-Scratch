@@ -25,7 +25,7 @@ include_directories(
 # However, by creating a library (as we are doing here) the library files
 # can be compiled once and used
 # create the turtlelib library 
-add_library(turtlelib src/diff_drive.cpp src/rigid2d.cpp)
+add_library(turtlelib src/diff_drive.cpp src/rigid2d.cpp src/circle.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
 add_executable(frame_main src/frame_main.cpp)

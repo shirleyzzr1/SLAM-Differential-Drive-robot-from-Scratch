@@ -1,0 +1,3 @@
+<launch>
+  <arg name="robot" default="nusim"/>
+</launch>
