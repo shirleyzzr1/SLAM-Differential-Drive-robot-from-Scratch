@@ -1,6 +1,7 @@
 #include<catch_ros/catch.hpp>
 #include"turtlelib/rigid2d.hpp"
 #include "turtlelib/diff_drive.hpp"
+#include "turtlelib/circle_detect.hpp"
 #include <cmath>
 using namespace turtlelib;
 TEST_CASE("test_integrate_twist","3 differenct cases"){

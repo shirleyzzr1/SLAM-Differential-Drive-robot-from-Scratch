@@ -1,6 +1,8 @@
-#ifndef CIRCLE_INCLUDE_GUARD_HPP
-#define CIRCLE_INCLUDE_GUARD_HPP
+#ifndef CIRCLE_DETECT_INCLUDE_GUARD_HPP
+#define CIRCLE_DETECT_INCLUDE_GUARD_HPP
 #include <vector>
+#include "turtlelib/rigid2d.hpp"
+
 /// \file
 /// \brief Circle detection algorithm
 namespace turtlelib{

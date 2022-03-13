@@ -54,12 +54,12 @@ include_directories(
 # catkin_add_nosetests(test)
 add_executable(ekf src/ekf.cpp)
 target_link_libraries(ekf armadillo ${catkin_LIBRARIES})
-add_executable(landmark src/landmark.cpp)
-target_link_libraries(landmark armadillo ${catkin_LIBRARIES})
+add_executable(landmarks src/landmarks.cpp)
+target_link_libraries(landmarks armadillo ${catkin_LIBRARIES})
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-install(TARGETS ekf landmark
+install(TARGETS ekf landmarks
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(PROGRAMS

@@ -1,6 +1,5 @@
 #include <iostream>
-#include "turtlelib/circle.hpp"
-#include "turtlelib/rigid2d.hpp"
+#include "turtlelib/circle_detect.hpp"
 #include <string>
 #include <cmath>
 #include <armadillo>
@@ -62,18 +61,44 @@ namespace turtlelib{
             }
             arma::rowvec row_sum = arma::sum(Z,0);
             z_mean = row_sum(0)/n;
-            arma::mat M = (Z.t()*Z)/n;
-
+            arma::mat M = (Z.t()*Z)/n; 
             arma::mat H_inv = arma::zeros<arma::mat>(4,4);
             H_inv(0,3) = 0.5;
             H_inv(3,0) = 0.5;
             H_inv(3,3) = -2*z_mean;
 
-            
-
+            arma::mat U;
+            arma::mat V;
+            arma::vec sigma;
+            arma::svd(U,sigma,V,Z);
+            arma::vec A;
+            if (arma::min(sigma)<10^-12) A = V.col(3);
+            else{
+                arma::mat Y = V*sigma*V.t();
+                arma::cx_vec eigval;
+                arma::cx_mat eigvec;
+                arma::eig_gen(eigval,eigvec,Y);
+                double min_eig = (eigval[0].real())*(eigval[0].real())+(eigval[0].imag())*(eigval[0].imag());
+                int min_idx = 0;
+                for(int i=1;i<eigval.size();i++){
+                    double cur_eig = (eigval[i].real())*(eigval[i].real())+(eigval[i].imag())*(eigval[i].imag());
+                    if (cur_eig<min_eig){
+                        min_idx = i;
+                        min_eig = cur_eig;
+                    }
+                }
+                arma::cx_vec A_star = eigvec.col(i);
+                //A = inv(Y)*A_star;
+            }
+            //solve for the equation for the circle
+            double a = -A(1)/(2*A(0));
+            double b = -A(2)/(2*A(0));
+            double R = sqrt((A(1)*A(1)+A(2)*A(2)-4*A(0)*A(3))/(4*A(0)*A(0)));
+            Vector2D center = {xy_mean.x+a,xy_mean.y+b};            
         }
     }
     void Circle::classification(){
+        std::vector<std::vector<Vector2D>> new_xy_clusters;
         for(int i=0;i<xy_clusters.size();i++){
             std::vector<double>angles;
             double sum_angle = 0;
@@ -84,12 +109,17 @@ namespace turtlelib{
                 angles.push_back(p_angle);
                 sum_angle+=p_angle;
             }
+            double mean_angle = sum_angle/(xy_clusters[i].size()-2);
+            double std_angle=0;
             //compute mean and standard derivation of the angles
             for(int j=0;j<angles.size();j++){
-                
+                std_angle+=(angles[j]-mean_angle)*(angles[j]-mean_angle);
             }
+            std_angle = sqrt(std_angle/(xy_clusters[i].size()-2));
+            if(std_angle<0.15 && rad2deg(mean_angle)>90 && rad2deg(mean_angle)<135)
+                new_xy_clusters.push_back(xy_clusters[i]);
         }
-
+        xy_clusters = new_xy_clusters;
     }
 
 
