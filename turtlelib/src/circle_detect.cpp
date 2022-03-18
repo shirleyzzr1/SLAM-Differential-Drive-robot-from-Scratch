@@ -5,8 +5,12 @@
 #include <armadillo>
 
 namespace turtlelib{
-    void Circle::range_cluster(std::vector<double> ranges,double thresh_dist){
-        std::vector<double> cur_cluster;
+    Circle::Circle(){}
+
+    Circle::Circle(std::vector<std::vector<Vector2D>> xy_clusters):xy_clusters(xy_clusters){}
+
+    void Circle::range_cluster(std::vector<float> ranges,float thresh_dist){
+        std::vector<float> cur_cluster;
         std::vector<Vector2D> cur_cluster_xy;
         double angle_increment = 0.0174;
         cur_cluster_xy.push_back({ranges[0]*cos(0),ranges[0]*sin(0)});
@@ -49,7 +53,7 @@ namespace turtlelib{
             for(int j=0;j<n;j++){
                 xy_sum += xy_clusters[i][j];
             }
-            Vector2D xy_mean = xy_sum*(1/n);
+            Vector2D xy_mean = xy_sum*(1.0/n);
             arma::mat Z = arma::zeros<arma::mat>(n,4);
             double z_mean = 0;
             for(int j=0;j<n;j++){
@@ -64,6 +68,8 @@ namespace turtlelib{
             arma::mat M = (Z.t()*Z)/n; 
             arma::mat H_inv = arma::zeros<arma::mat>(4,4);
             H_inv(0,3) = 0.5;
+            H_inv(1,1) = 1;
+            H_inv(2,2) = 1;
             H_inv(3,0) = 0.5;
             H_inv(3,3) = -2*z_mean;
 
@@ -72,12 +78,23 @@ namespace turtlelib{
             arma::vec sigma;
             arma::svd(U,sigma,V,Z);
             arma::vec A;
-            if (arma::min(sigma)<10^-12) A = V.col(3);
+            double min_sigma = arma::min(sigma);
+            if (min_sigma<pow(10,-12)) {
+                std::cout <<"correct" << std::endl;
+                std::cout << "V" << V <<std::endl; 
+                A = V.col(3);
+            }
             else{
-                arma::mat Y = V*sigma*V.t();
+                arma::mat bigsigma = arma::eye<arma::mat>(4,4);
+                bigsigma(0,0) = sigma(0);
+                bigsigma(1,1) = sigma(1);
+                bigsigma(2,2) = sigma(2);
+                bigsigma(3,3) = sigma(3);
+                arma::mat Y = V*bigsigma*V.t();
+                arma::mat Q = Y*H_inv*Y;
                 arma::cx_vec eigval;
                 arma::cx_mat eigvec;
-                arma::eig_gen(eigval,eigvec,Y);
+                arma::eig_gen(eigval,eigvec,Q);
                 double min_eig = (eigval[0].real())*(eigval[0].real())+(eigval[0].imag())*(eigval[0].imag());
                 int min_idx = 0;
                 for(int i=1;i<eigval.size();i++){
@@ -87,14 +104,18 @@ namespace turtlelib{
                         min_eig = cur_eig;
                     }
                 }
-                arma::cx_vec A_star = eigvec.col(i);
-                //A = inv(Y)*A_star;
+                arma::cx_vec A_star = eigvec.col(min_idx);
+
+                A = inv(Y)*real(A_star);
             }
             //solve for the equation for the circle
             double a = -A(1)/(2*A(0));
             double b = -A(2)/(2*A(0));
             double R = sqrt((A(1)*A(1)+A(2)*A(2)-4*A(0)*A(3))/(4*A(0)*A(0)));
-            Vector2D center = {xy_mean.x+a,xy_mean.y+b};            
+            if (R>0.1)continue;
+            Vector2D center = {xy_mean.x+a,xy_mean.y+b};    
+            centers.push_back(center);        
+            radius.push_back(R);
         }
     }
     void Circle::classification(){
@@ -116,10 +137,18 @@ namespace turtlelib{
                 std_angle+=(angles[j]-mean_angle)*(angles[j]-mean_angle);
             }
             std_angle = sqrt(std_angle/(xy_clusters[i].size()-2));
-            if(std_angle<0.15 && rad2deg(mean_angle)>90 && rad2deg(mean_angle)<135)
+            if(std_angle<2 && rad2deg(mean_angle)>90 && rad2deg(mean_angle)<140)
                 new_xy_clusters.push_back(xy_clusters[i]);
+            
         }
         xy_clusters = new_xy_clusters;
+    }
+
+    void Circle::clear(){
+        clusters.clear();
+        xy_clusters.clear();
+        centers.clear();
+        radius.clear();
     }
 
 

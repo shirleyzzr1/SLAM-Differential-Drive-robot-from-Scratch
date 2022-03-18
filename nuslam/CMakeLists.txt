@@ -67,3 +67,9 @@ install(PROGRAMS
   src/landmark.cpp
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/scripts
 )
+
+if(CATKIN_ENABLE_TESTING)
+find_package(catkin REQUIRED COMPONENTS catch_ros)
+catch_add_test(circle_test tests/circle_tests.cpp)
+target_link_libraries(circle_test	armadillo ${catkin_LIBRARIES} turtlelib )
+endif()

@@ -485,11 +485,11 @@ void Message_handle::update_pos(){
                 turtlelib::normalize_angle(this->reddiff.body_pos().rotation())};
     this->reddiff.set_body_pos(trans);
 }
-void Message_handle::main(const ros::TimerEvent& event){
-    this->update_pos();
-    this->transform();
+// void Message_handle::main(const ros::TimerEvent& event){
+//     this->update_pos();
+//     this->transform();
 
-}
+// }
 
 int main(int argc, char ** argv){
     //init the node

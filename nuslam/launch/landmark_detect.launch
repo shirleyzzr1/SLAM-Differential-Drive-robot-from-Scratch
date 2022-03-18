@@ -1,3 +1,17 @@
 <launch>
   <arg name="robot" default="nusim"/>
+  <arg name = "use_rviz" default='false'/>
+  <arg name = "cmd_src" default="teleop" />
+  <include file = "$(find nusim)/launch/nusim.launch" pass_all_args="false">
+    <arg name="robot" default="nusim"/>
+    <arg name = "cmd_src" default="$(arg cmd_src)" />
+    <arg name = "use_jsp" default="true" />
+  </include>
+  <rosparam command="load" file="$(find nuslam)/config/nuslam.yaml" />
+
+  <node name = "landmarks" pkg ="nuslam" type = "landmarks" output="screen"/> 
+  <group if="$(arg use_rviz)">
+    <!-- rviz will enable us to see the robot -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuslam)/rviz/landmarks.rviz" />
+  </group>
 </launch>

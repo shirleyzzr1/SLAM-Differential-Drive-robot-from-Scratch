@@ -1,4 +1,8 @@
 #the process noise for the robot motion model
 std_q: [0.5,0.5,0.5]
 #the noise in measurement model
-std_r: [1,1]
+std_r: [1]
+#max measurements 
+max_num: 10
+#dist_thresh_for_cluster
+dist_thresh: 0.4

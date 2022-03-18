@@ -4,4 +4,4 @@ resolution: 0.015
 angle_min: 0.0
 angle_max: 6.28319
 samples: 360
-noise_std: 0.01
+noise_std: 0.00
