@@ -23,9 +23,12 @@ use_rviz: true/false to load rviz to visualize the robot
 
 robot: choose from nusim/localhost/<turtlebotname>/none. Nusim option starts the nusim node, and localhost start the robot in local machine, and turtlebotname starts the robot in the given name of turtlebot3.
 
-Here's the example of the what you should see when launch file works.
+Here's the example of the what you should see when you use fake sensordata for ekf slam.
 
 ![](images/nuslam.png)
 
-Here's the example of what you should see when you using lidar for ekf slam
+Here's the example of what you should see when you use lidar for ekf slam
 ![](images/ekf-lidar.gif)
+
+Here's an example of landmark detection on the real robot, which is more stable compared with the detection in simulation
+
