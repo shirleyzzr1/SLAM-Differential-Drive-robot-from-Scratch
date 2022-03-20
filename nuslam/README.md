@@ -26,3 +26,6 @@ robot: choose from nusim/localhost/<turtlebotname>/none. Nusim option starts the
 Here's the example of the what you should see when launch file works.
 
 ![](images/nuslam.png)
+
+Here's the example of what you should see when you using lidar for ekf slam
+![](images/ekf-lidar.gif)
