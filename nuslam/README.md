@@ -30,5 +30,6 @@ Here's the example of the what you should see when you use fake sensordata for e
 Here's the example of what you should see when you use lidar for ekf slam
 ![](images/ekf-lidar.gif)
 
-Here's an example of landmark detection on the real robot, which is more stable compared with the detection in simulation
+Here's an example of landmark detection on the real robot, which is more unstable compared with the detection in simulation
+![](images/landmark_detect.gif)
 
