@@ -16,6 +16,7 @@ namespace turtlelib{
         cur_cluster_xy.push_back({ranges[0]*cos(0),ranges[0]*sin(0)});
         cur_cluster.push_back(0);
         for(int i=1;i<ranges.size();i++){
+            if(ranges[i]<0.015)continue;
             if(abs(ranges[i]-ranges[i-1])<=thresh_dist){
                 cur_cluster.push_back(i);
                 cur_cluster_xy.push_back({ranges[i]*cos(i*angle_increment),ranges[i]*sin(i*angle_increment)});
@@ -46,7 +47,7 @@ namespace turtlelib{
             xy_clusters.pop_back();
         }
     }
-    void Circle::circle_fitting(){
+    void Circle::circle_fitting(double radius_range){
         for(int i=0;i<xy_clusters.size();i++){
             Vector2D xy_sum = {0,0};
             int n = xy_clusters[i].size();
@@ -112,13 +113,13 @@ namespace turtlelib{
             double a = -A(1)/(2*A(0));
             double b = -A(2)/(2*A(0));
             double R = sqrt((A(1)*A(1)+A(2)*A(2)-4*A(0)*A(3))/(4*A(0)*A(0)));
-            if (R>0.1)continue;
+            if (R>radius_range)continue;
             Vector2D center = {xy_mean.x+a,xy_mean.y+b};    
             centers.push_back(center);        
             radius.push_back(R);
         }
     }
-    void Circle::classification(){
+    void Circle::classification(double std_angle,double min_mean_angle,double max_mean_angle){
         std::vector<std::vector<Vector2D>> new_xy_clusters;
         for(int i=0;i<xy_clusters.size();i++){
             std::vector<double>angles;
@@ -131,13 +132,13 @@ namespace turtlelib{
                 sum_angle+=p_angle;
             }
             double mean_angle = sum_angle/(xy_clusters[i].size()-2);
-            double std_angle=0;
+            double cur_std_angle=0;
             //compute mean and standard derivation of the angles
             for(int j=0;j<angles.size();j++){
-                std_angle+=(angles[j]-mean_angle)*(angles[j]-mean_angle);
+                cur_std_angle+=(angles[j]-mean_angle)*(angles[j]-mean_angle);
             }
-            std_angle = sqrt(std_angle/(xy_clusters[i].size()-2));
-            if(std_angle<2 && rad2deg(mean_angle)>90 && rad2deg(mean_angle)<140)
+            cur_std_angle = sqrt(cur_std_angle/(xy_clusters[i].size()-2));
+            if(cur_std_angle<std_angle && rad2deg(mean_angle)>min_mean_angle && rad2deg(mean_angle)<max_mean_angle)
                 new_xy_clusters.push_back(xy_clusters[i]);
             
         }

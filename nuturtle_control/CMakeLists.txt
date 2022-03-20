@@ -190,7 +190,6 @@ include_directories(
 install(FILES
   launch/basic_remote.launch
   launch/start_robot.launch
-  launch/test.launch
 
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
 )
@@ -219,22 +218,25 @@ target_link_libraries(odometry ${catkin_LIBRARIES})
 add_executable(turtle_interface src/turtle_interface.cpp)
 target_link_libraries(turtle_interface ${catkin_LIBRARIES})
 
-install(TARGETS circle odometry turtle_interface
+add_executable(turtle_interface_two src/turtle_interface_two.cpp)
+target_link_libraries(turtle_interface_two ${catkin_LIBRARIES})
+
+install(TARGETS circle odometry turtle_interface turtle_interface_two
   RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
-if(CATKIN_ENABLE_TESTING)
-  catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
-  target_link_libraries(turtle_interface_test ${catkin_LIBRARIES})
-  add_rostest(launch/turtle_interface.test)
+# if(CATKIN_ENABLE_TESTING)
+#   catch_add_rostest_node(turtle_interface_test tests/turtle_interface_test.cpp)
+#   target_link_libraries(turtle_interface_test ${catkin_LIBRARIES})
+#   add_rostest(launch/turtle_interface.test)
 
 
-  catch_add_rostest_node(turtle_odom_test tests/turtle_odom_test.cpp)
-  target_link_libraries(turtle_odom_test ${catkin_LIBRARIES})
-  add_rostest(launch/turtle_odom.test)
+#   catch_add_rostest_node(turtle_odom_test tests/turtle_odom_test.cpp)
+#   target_link_libraries(turtle_odom_test ${catkin_LIBRARIES})
+#   add_rostest(launch/turtle_odom.test)
 
-  add_rostest(launch/turtle_circle.test)
+#   add_rostest(launch/turtle_circle.test)
 
-endif()
+# endif()
 
 

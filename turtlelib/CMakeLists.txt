@@ -45,6 +45,9 @@ install(
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 
+# install(TARGETS turtlelib
+#   RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+# )
 # Use the cmake testing functionality. A test is just an executable.
 # enable_testing()
 # add_executable(turtlelib_test tests/tests.cpp )

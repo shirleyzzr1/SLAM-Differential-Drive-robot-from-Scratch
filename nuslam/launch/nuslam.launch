@@ -1,8 +1,9 @@
 <launch>
+
   <arg name = "robot" default="nusim"/>
   <arg name = "use_rviz" default='false'/>
   <arg name = "cmd_src" default="teleop" />
-  <arg name = "ekf" default="false"/>
+  <arg name = "ekf" default="true"/>
   <!--the name of the joint of blue robot-->
   <param name = "wheel_left" value = "blue/wheel_left_joint"/>
   <param name = "wheel_right" value = "blue/wheel_right_joint" /> 

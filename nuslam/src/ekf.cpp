@@ -36,6 +36,7 @@ public:
     int cylinders_num;
     int max_num;
     double rate;
+    double new_landmark_thresh;
     arma::vec3 accumulated_twist;
     arma::mat current_state;
     arma::mat covariance;
@@ -87,7 +88,7 @@ void Message_handle::sensor_callback(const visualization_msgs::MarkerArray& msg)
         arma::vec2 z={sqrt(relative_x*relative_x+relative_y*relative_y),turtlelib::normalize_angle(atan2(relative_y,relative_x))};
         if(this->initialize_landmark[i]){
             this->current_state(3+2*i,0) = this->current_state(1,0)+z[0]*cos(z[1]+this->current_state(0,0));
-            this->current_state(3+2*i+1,0) = this->current_state(1,0)+z[0]*sin(z[1]+this->current_state(0,0));
+            this->current_state(3+2*i+1,0) = this->current_state(2,0)+z[0]*sin(z[1]+this->current_state(0,0));
             this->initialize_landmark[i] = 0;
         }
         (this->real_measurements)(2*i,0) = z[0];
@@ -104,8 +105,8 @@ void Message_handle::sensor_callback(const visualization_msgs::MarkerArray& msg)
 
         //the derivate with respect to the state
         arma::mat Hj = arma::zeros<arma::mat>(2,3+2*this->cylinders_num);
-        Hj(arma::span(0,1), arma::span(0,2))={{0,-relative_x/sqrt(d),-relative_y/sqrt(d)},{-1,relative_y/d,-relative_x/d}};
-        Hj(arma::span(0,1), arma::span(2*(i+1)+1,2*(i+1)+2))={{relative_x/sqrt(d),relative_y/sqrt(d)},{-relative_y/d,relative_x/d}};
+        Hj(arma::span(0,1), arma::span(0,2))=arma::mat({{0,-relative_x/sqrt(d),-relative_y/sqrt(d)},{-1,relative_y/d,-relative_x/d}});
+        Hj(arma::span(0,1), arma::span(2*(i+1)+1,2*(i+1)+2))=arma::mat({{relative_x/sqrt(d),relative_y/sqrt(d)},{-relative_y/d,relative_x/d}});
         this->H.rows(2*i,2*i+1) = Hj;
     }
     this->ekf_update();
@@ -142,12 +143,21 @@ void Message_handle::lidar_callback(const visualization_msgs::MarkerArray& msg){
     landmark_mindis.fill(1000);
     arma::vec landmark_lidar(max_num);
     landmark_lidar.fill(-1);
-    ROS_INFO("current_state1:%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",this->current_state(0,0),this->current_state(1,0),this->current_state(2,0),\
+    ROS_INFO("current_state1:%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",\
+    this->current_state(0,0),this->current_state(1,0),this->current_state(2,0),\
     this->current_state(3,0),this->current_state(4,0),this->current_state(5,0),\
-    this->current_state(6,0),this->current_state(7,0),this->current_state(8,0));
+    this->current_state(6,0),this->current_state(7,0),this->current_state(8,0),\
+    this->current_state(9,0),this->current_state(10,0),this->current_state(11,0),\
+    this->current_state(12,0),this->current_state(13,0));
     for(int i=0;i<msg.markers.size();i++){
-        ROS_INFO("mark realx %f",msg.markers[i].pose.position.x);
-        ROS_INFO("mark realy %f",msg.markers[i].pose.position.y);
+        double relative_x,relative_y;
+        relative_x = msg.markers[i].pose.position.x;
+        relative_y = msg.markers[i].pose.position.y;
+        arma::vec2 lidar_z={sqrt(relative_x*relative_x+relative_y*relative_y),turtlelib::normalize_angle(atan2(relative_y,relative_x))};
+        double lidar_real_x = this->current_state(1,0)+lidar_z[0]*cos(lidar_z[1]+this->current_state(0,0));
+        double lidar_real_y = this->current_state(2,0)+lidar_z[0]*sin(lidar_z[1]+this->current_state(0,0));
+        ROS_INFO("mark realx %lf",lidar_real_x);
+        ROS_INFO("mark realy %lf",lidar_real_y);
         if(n==0){
             this->cylinders_num+=1;
             landmark_lidar[i] = i;
@@ -163,8 +173,8 @@ void Message_handle::lidar_callback(const visualization_msgs::MarkerArray& msg){
                 arma::vec2 z_theo={sqrt(d),turtlelib::normalize_angle(atan2(relative_y,relative_x)-this->current_state(0,0))};
 
                 arma::mat h = arma::zeros<arma::mat>(2,3+2*n);
-                h(arma::span(0,1), arma::span(0,2))={{0,-relative_x/sqrt(d),-relative_y/sqrt(d)},{-1,relative_y/d,-relative_x/d}};
-                h(arma::span(0,1), arma::span(2*(j+1)+1,2*(j+1)+2))={{relative_x/sqrt(d),relative_y/sqrt(d)},{-relative_y/d,relative_x/d}};
+                h(arma::span(0,1), arma::span(0,2))=arma::mat({{0,-relative_x/sqrt(d),-relative_y/sqrt(d)},{-1,relative_y/d,-relative_x/d}});
+                h(arma::span(0,1), arma::span(2*(j+1)+1,2*(j+1)+2))=arma::mat({{relative_x/sqrt(d),relative_y/sqrt(d)},{-relative_y/d,relative_x/d}});
 
                 //2*2
                 arma::mat dis_cov = h*this->covariance(arma::span(0,2+2*n),arma::span(0,2+2*n))*(h.t())+R;
@@ -180,7 +190,7 @@ void Message_handle::lidar_callback(const visualization_msgs::MarkerArray& msg){
             std::cout << "i" << i<< std::endl;
             std::cout<< "distance"<<std::endl;
             distance.print();
-            if(arma::min(distance)>0.2){
+            if(arma::min(distance)>new_landmark_thresh){
                 //find a new landmark;
                 landmark_lidar[this->cylinders_num] = i;
                 this->cylinders_num+=1;
@@ -212,15 +222,15 @@ void Message_handle::lidar_callback(const visualization_msgs::MarkerArray& msg){
         std::cout <<"k"<<k<< "i" <<i << std::endl;
         float relative_x = msg.markers[k].pose.position.x;
         float relative_y = msg.markers[k].pose.position.y;
-        ROS_INFO("relativex %f",relative_x);
-        ROS_INFO("relative_y %f",relative_y);
+        // ROS_INFO("relativex %f",relative_x);
+        // ROS_INFO("relative_y %f",relative_y);
 
         //relative distance, relative theta
         arma::vec2 z={sqrt(relative_x*relative_x+relative_y*relative_y),turtlelib::normalize_angle(atan2(relative_y,relative_x))};
         //new landmarks
         if(this->initialize_landmark[i] ==1){
             this->current_state(3+2*i,0) = this->current_state(1,0)+z[0]*cos(z[1]+this->current_state(0,0));
-            this->current_state(3+2*i+1,0) = this->current_state(1,0)+z[0]*sin(z[1]+this->current_state(0,0));
+            this->current_state(3+2*i+1,0) = this->current_state(2,0)+z[0]*sin(z[1]+this->current_state(0,0));
             this->initialize_landmark[i] = 0;
         }
         (this->real_measurements)(2*i,0) = z[0];
@@ -238,8 +248,8 @@ void Message_handle::lidar_callback(const visualization_msgs::MarkerArray& msg){
         //update the ekf
         //the derivate with respect to the state
         arma::mat Hj = arma::zeros<arma::mat>(2,3+2*this->max_num);
-        Hj(arma::span(0,1), arma::span(0,2))={{0,-relative_x/sqrt(d),-relative_y/sqrt(d)},{-1,relative_y/d,-relative_x/d}};
-        Hj(arma::span(0,1), arma::span(2*(i+1)+1,2*(i+1)+2))={{relative_x/sqrt(d),relative_y/sqrt(d)},{-relative_y/d,relative_x/d}};
+        Hj(arma::span(0,1), arma::span(0,2))=arma::mat({{0,-relative_x/sqrt(d),-relative_y/sqrt(d)},{-1,relative_y/d,-relative_x/d}});
+        Hj(arma::span(0,1), arma::span(2*(i+1)+1,2*(i+1)+2))=arma::mat({{relative_x/sqrt(d),relative_y/sqrt(d)},{-relative_y/d,relative_x/d}});
         // arma::mat cov = this->covariance(arma::span(0,2+2*this->cylinders_num),arma::span(0,2+2*this->cylinders_num));
         arma::mat cov = this->covariance;
         this->H.rows(2*i,2*i+1) = Hj;
@@ -311,14 +321,14 @@ void Message_handle::ekf_predict(){
     //if no angular velocity in twist
     if (abs(dtheta)<0.001){
         this->current_state(1,0)+= dx*cos(last_theta);
-        this->current_state(1,0)+= dx*sin(last_theta);
+        this->current_state(2,0)+= dx*sin(last_theta);
         A(1,0) -= dx*sin(last_theta);
         A(2,0) += dx*cos(last_theta);
     }
     else{
         this->current_state(0,0) += dtheta;
         this->current_state(1,0)+= (-dx/dtheta*sin(last_theta)+(dx/dtheta)*sin(last_theta+dtheta));
-        this->current_state(1,0)+= (dx/dtheta*cos(last_theta)-(dx/dtheta)*cos(last_theta+dtheta));
+        this->current_state(2,0)+= (dx/dtheta*cos(last_theta)-(dx/dtheta)*cos(last_theta+dtheta));
         A(1,0) += (-dx/dtheta*cos(last_theta)+(dx/dtheta)*cos(last_theta+dtheta));
         A(2,0) += (-dx/dtheta*sin(last_theta)+(dx/dtheta)*sin(last_theta+dtheta));
     } 
@@ -580,6 +590,7 @@ int main(int argc, char ** argv){
     double radius,track;
     double cylinder_radius;
     double max_num;
+    double new_landmark_thresh;
     std::vector<double> std_q;
     std::vector<double> std_r;
 
@@ -589,6 +600,7 @@ int main(int argc, char ** argv){
     ros::param::get("/wheel_radius",radius);
     ros::param::get("/track_width",track);
     ros::param::get("/cylinder_radius",cylinder_radius);
+    ros::param::get("/new_landmark_thresh",new_landmark_thresh);
 
     Message_handle msgh;
     msgh.diffdrive.set_param(radius,track);
@@ -598,6 +610,7 @@ int main(int argc, char ** argv){
     }
     msgh.max_num = max_num;
     msgh.cylinders_num = 0;
+    msgh.new_landmark_thresh = new_landmark_thresh;
 
     msgh.current_state= arma::mat(2*max_num+3,1,arma::fill::zeros);
     // msgh.covariance = arma::zeros<arma::mat>(2*cylinders_num+3,2*cylinders_num+3);

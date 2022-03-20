@@ -1,0 +1,33 @@
+<launch>
+
+  <arg name = "robot" default="nusim"/>
+  <arg name = "use_rviz" default='true'/>
+  <arg name = "cmd_src" default="teleop" />
+  <arg name = "ekf" default="true"/>
+
+  <include file = "$(find nuslam)/launch/landmark_detect.launch" pass_all_args="false">
+    <arg name="robot" value="$(arg robot)" />
+    <arg name = "cmd_src" value="$(arg cmd_src)" />
+  </include>
+
+  <!--nuslam node for ekf-->
+  <node name = "ekf" pkg="nuslam" type="ekf" output="screen" if="$(eval arg('ekf') == true)"/>
+
+  <!--group of red robot-->
+  <group ns = "green">
+    <!--load the urdf into the paramete r server-->
+    <param name="robot_description" command="xacro '$(find nuturtle_description)/urdf/turtlebot3_burger.urdf.xacro' color:=green"/>
+    <!-- The robot_state_publisher reads the urdf from /robot_description parameter
+        and listens to joint information on the /joint_states topic -->
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher"/>
+
+  </group>
+
+  <!--load rviz is use_rivz is set to true-->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuslam)/rviz/nuslam.rviz" 
+        if="$(eval arg('use_rviz') == true)"/>
+  <!--publish a static transform from world to odom-->
+  <node pkg="tf" type="static_transform_publisher" name="green_broadcaster" args="0 0 0 0 0 0 1 world map 100"/>
+
+</launch>

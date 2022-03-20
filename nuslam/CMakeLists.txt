@@ -64,10 +64,23 @@ install(TARGETS ekf landmarks
 )
 install(PROGRAMS
   src/ekf.cpp
-  src/landmark.cpp
+  src/landmarks.cpp
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}/scripts
 )
+install(FILES
+  launch/landmark_detect.launch
+  launch/nuslam_new.launch
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+)
 
+install(FILES
+  config/nuslam.yaml
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+)
+
+install(TARGETS landmarks ekf
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 if(CATKIN_ENABLE_TESTING)
 find_package(catkin REQUIRED COMPONENTS catch_ros)
 catch_add_test(circle_test tests/circle_tests.cpp)

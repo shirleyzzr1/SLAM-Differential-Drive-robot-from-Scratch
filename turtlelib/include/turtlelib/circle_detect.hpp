@@ -22,10 +22,10 @@ namespace turtlelib{
         void range_cluster(std::vector<float>range,float thresh);
 
         /// \brief fit the clustered arc to generate a cirlce
-        void circle_fitting();
+        void circle_fitting(double radius_range);
 
         /// \brief classify the clusters
-        void classification();
+        void classification(double std_angle,double min_mean_angle,double max_mean_angle);
 
         /// \brief clear the detected circles
         void clear();

@@ -13,7 +13,7 @@ TEST_CASE("circle fitting test 1","[vectors]"){
     cur_clusters.push_back({3,7});
     xy_clusters.push_back(cur_clusters);
     Circle circle = Circle(xy_clusters);
-    circle.circle_fitting();
+    circle.circle_fitting(0.1);
     REQUIRE( circle.centers[0].x==Approx(4.615482).margin(1e-4));
     REQUIRE( circle.centers[0].y==Approx(2.807354).margin(1e-4));
     REQUIRE( circle.radius[0]==Approx(4.8275).margin(1e-4));
@@ -27,7 +27,7 @@ TEST_CASE("circle fitting test 2","[vectors]"){
     cur_clusters.push_back({1,0});
     xy_clusters.push_back(cur_clusters);
     Circle circle = Circle(xy_clusters);
-    circle.circle_fitting();
+    circle.circle_fitting(0.1);
     REQUIRE( circle.centers[0].x==Approx(0.4908357).margin(1e-4));
     REQUIRE( circle.centers[0].y==Approx(-22.15212).margin(1e-4));
     REQUIRE( circle.radius[0]==Approx(22.17979).margin(1e-4));
@@ -42,7 +42,7 @@ TEST_CASE("circle classification test 1","[vectors]"){
     cur_clusters.push_back({0,-2});
     xy_clusters.push_back(cur_clusters);
     Circle circle = Circle(xy_clusters);
-    circle.classification();
+    circle.classification(0.15,90,140);
     REQUIRE( circle.xy_clusters.size()==1);
 }
 TEST_CASE("circle classification test 2","not circle"){
@@ -55,6 +55,6 @@ TEST_CASE("circle classification test 2","not circle"){
     cur_clusters.push_back({0,-3});
     xy_clusters.push_back(cur_clusters);
     Circle circle = Circle(xy_clusters);
-    circle.classification();
+    circle.classification(0.15,90,140);
     REQUIRE( circle.xy_clusters.size()==0);
 }

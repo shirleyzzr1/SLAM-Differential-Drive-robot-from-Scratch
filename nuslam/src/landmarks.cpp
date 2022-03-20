@@ -9,16 +9,22 @@ public:
     ros::Publisher vis_pub;
     void lidar_callback(sensor_msgs::LaserScan msg);
     double dist_thresh;
+    double std_angle;
+    double min_mean_angle;
+    double max_mean_angle;
+    double radius_range;
+    std::string marker_frame_id;
 
 };
 void Message_handle::lidar_callback(sensor_msgs::LaserScan msg){
+    // ROS_INFO("get laser data");
     circle.clear();
     // ROS_INFO("circle_clear_success");
-    circle.range_cluster(msg.ranges,0.4);
+    circle.range_cluster(msg.ranges,this->dist_thresh);
     // ROS_INFO("range_cluster");
-    circle.classification();
+    circle.classification(this->std_angle,this->min_mean_angle,this->max_mean_angle);
     // ROS_INFO("classification");
-    circle.circle_fitting();
+    circle.circle_fitting(this->radius_range);
     // ROS_INFO("circle_fitting"); 
     // ROS_INFO("circle_nums:%d",this->circle.centers.size());
     visualization_msgs::MarkerArray markerArray;
@@ -29,7 +35,7 @@ void Message_handle::lidar_callback(sensor_msgs::LaserScan msg){
     //the read marker pose
         // ROS_INFO("circle_centers x:%lf,y:%lf",this->circle.centers[i].x,this->circle.centers[i].y);
         visualization_msgs::Marker marker;
-        marker.header.frame_id = "red/base_footprint";
+        marker.header.frame_id = this->marker_frame_id;
         marker.header.stamp = ros::Time();
         marker.id = i;
         marker.type = visualization_msgs::Marker::CYLINDER;
@@ -56,11 +62,25 @@ void Message_handle::lidar_callback(sensor_msgs::LaserScan msg){
 int main(int argc, char ** argv){
     ros::init(argc, argv, "landmarks");
     ros::NodeHandle n;
-    double dist_thresh = ros::param::get("/dist_thresh",dist_thresh);
-
+    double dist_thresh;
+    double std_angle;
+    double min_mean_angle;
+    double max_mean_angle;
+    double radius_range;
+    
     Message_handle msgh;
+    ros::param::get("/dist_thresh",dist_thresh);
+    ros::param::get("/std_angle",std_angle);
+    ros::param::get("/min_mean_angle",min_mean_angle);
+    ros::param::get("/max_mean_angle",max_mean_angle);
+    ros::param::get("/radius_range",radius_range);
+    n.param<std::string>("/marker_frame_id", msgh.marker_frame_id, "red/base_footprint");
 
     msgh.dist_thresh = dist_thresh;
+    msgh.std_angle = std_angle;
+    msgh.min_mean_angle = min_mean_angle;
+    msgh.max_mean_angle = max_mean_angle;
+    msgh.radius_range = radius_range;
     ros::Subscriber lidar_sub= n.subscribe("/laser",1000,&Message_handle::lidar_callback,&msgh);
     msgh.vis_pub = n.advertise<visualization_msgs::MarkerArray>( "/clustering_circle", 0 ,true);
     ros::Rate r(50);

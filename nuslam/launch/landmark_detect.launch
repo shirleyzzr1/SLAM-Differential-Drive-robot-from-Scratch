@@ -2,16 +2,28 @@
   <arg name="robot" default="nusim"/>
   <arg name = "use_rviz" default='false'/>
   <arg name = "cmd_src" default="teleop" />
-  <include file = "$(find nusim)/launch/nusim.launch" pass_all_args="false">
+  <arg name = "marker_frame_id" default="red/base_footprint"/>
+  <!-- <include file = "$(find nusim)/launch/nusim.launch" pass_all_args="false">
     <arg name="robot" default="nusim"/>
     <arg name = "cmd_src" default="$(arg cmd_src)" />
     <arg name = "use_jsp" default="true" />
+  </include> -->
+  <remap from="/scan" to="/laser"/>
+  <include file = "$(find nuturtle_control)/launch/start_robot.launch" pass_all_args="false">
+    <arg name="robot" value="$(arg robot)"/>
+    <arg name = "cmd_src" default="$(arg cmd_src)" />
   </include>
   <rosparam command="load" file="$(find nuslam)/config/nuslam.yaml" />
-
-  <node name = "landmarks" pkg ="nuslam" type = "landmarks" output="screen"/> 
   <group if="$(arg use_rviz)">
     <!-- rviz will enable us to see the robot -->
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find nuslam)/rviz/landmarks.rviz" />
   </group>
+  
+  <node name = "landmarks" pkg ="nuslam" type = "landmarks" output="screen"> 
+  <param name = "marker_frame_id" value = "$(arg marker_frame_id)"/>
+  </node>
+
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="laser_broadcaster" args="0 0 0 0 0 0 1 blue/base_scan laser 100"/> -->
+
 </launch>

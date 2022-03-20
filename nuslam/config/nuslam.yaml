@@ -4,5 +4,12 @@ std_q: [0.5,0.5,0.5]
 std_r: [1]
 #max measurements 
 max_num: 10
-#dist_thresh_for_cluster
+#dist_thresh_for_cluster 0.4
 dist_thresh: 0.4
+#std angle 0.15 90 140
+std_angle: 0.15
+min_mean_angle: 90
+max_mean_angle: 140
+radius_range: 0.08
+#whether to add new landmark
+new_landmark_thresh: 0.02
