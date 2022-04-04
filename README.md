@@ -1,6 +1,5 @@
-# ME495 Sensing, Navigation and Machine Learning For Robotics
-* Zhuoru Zhang
-* Winter 2022
+# SLAM Differential Drive Robot
+This project creates the ros packages and libraries for kinematics of differential drive robot control, EKF-SLAM, circle detection and data association.
 # Package List
 This repository consists of several ROS packages
 - **nuturtle_descripton** - contains urdf files and basic debugging,testing, and visualization code for the robots using
